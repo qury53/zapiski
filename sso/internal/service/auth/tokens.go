@@ -1,16 +1,27 @@
 package auth_service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
+)
+
+const (
+	Issuer           = "zapiski"
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
 )
 
 // Claims данные, которые хранятся в jwt токене, нужны в основном для фронта
 type Claims struct {
+	UserID int64
+	jwt.RegisteredClaims
+}
+
+type RefreshTokenClaims struct {
 	UserID int64
 	jwt.RegisteredClaims
 }
@@ -34,7 +45,7 @@ func (s *AuthService) GenerateAccessToken(userID int64) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "zapiski",
+			Issuer:    Issuer,
 			Subject:   fmt.Sprintf("%d", userID),
 		},
 	}
@@ -55,14 +66,15 @@ func (s *AuthService) GenerateAccessToken(userID int64) (string, error) {
 //
 // Returns: string, error
 
-func (s *AuthService) GenerateRefreshToken(userID int64) (string, error) {
-	claims := Claims{
+func (s *AuthService) GenerateRefreshToken(userID int64, jti string) (string, error) {
+	claims := RefreshTokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.RefreshTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "zapiski",
+			Issuer:    Issuer,
 			Subject:   fmt.Sprintf("%d", userID),
 		},
 	}
@@ -103,12 +115,14 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-// ValidateRefreshToken валидирует refresh токен
+// ValidateRefreshToken валидирует refresh токен.
+// Для истёкшего токена возвращает его claims и core_errors.ErrTokenExpired —
+// по jti вызывающий код отличает истечение от повторного использования.
 //
-// Returns: int, bool, error
+// Returns: claims, признак валидности, ошибку
 
-func (s *AuthService) ValidateRefreshToken(ctx context.Context, tokenStr string) (int64, bool, error) {
-	claims := &Claims{}
+func (s *AuthService) ValidateRefreshToken(tokenStr string) (RefreshTokenClaims, bool, error) {
+	claims := &RefreshTokenClaims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -118,18 +132,42 @@ func (s *AuthService) ValidateRefreshToken(ctx context.Context, tokenStr string)
 	})
 
 	if err != nil {
+		// Истёкший токен возвращаем вместе с claims: по jti вызывающий код
+		// находит сессию и отличает истечение от повторного использования.
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return 0, false, nil
+			return *claims, false, core_errors.ErrTokenExpired
 		}
 
-		return 0, false, fmt.Errorf("failed to parse jwt: %w", err)
+		return RefreshTokenClaims{}, false, fmt.Errorf("failed to parse jwt: %w", err)
 	}
 
-	if !token.Valid {
-		return 0, false, nil
+	if claims, ok := token.Claims.(*RefreshTokenClaims); ok && token.Valid {
+		return *claims, true, nil
 	}
 
-	return claims.UserID, true, nil
+	return RefreshTokenClaims{}, false, nil
 }
 
-func (s *AuthService) RotateToken(ctx context.Context, oldJTI string)
+// ParseRefreshToken парсит RefreshTokenClaims из refresh токена
+func (s *AuthService) ParseRefreshToken(
+	tokenString string,
+) (RefreshTokenClaims, error) {
+	claims := RefreshTokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return s.JWTSecret, nil
+	})
+
+	if err != nil {
+		return RefreshTokenClaims{}, err
+	}
+
+	if claims, ok := token.Claims.(RefreshTokenClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return RefreshTokenClaims{}, fmt.Errorf("invalid token: %w %v", core_errors.ErrUnauthorized, err)
+}

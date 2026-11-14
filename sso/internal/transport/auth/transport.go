@@ -2,6 +2,7 @@ package auth_transport
 
 import (
 	"context"
+	"net/netip"
 	"shared/pkg/logger"
 	ssov1 "shared/pkg/proto/sso/v1"
 	"time"
@@ -21,8 +22,11 @@ type AuthService interface {
 		ctx context.Context,
 		username string,
 		password string,
+		userAgent *string,
+		ipAddr *netip.Addr,
 	) (string, string, int64, error)
 	Refresh(ctx context.Context, refreshToken string) (string, string, error)
+	Logout(ctx context.Context, refreshToken string) error
 	GetRefreshTokenTTL() time.Duration
 	VerifyEmail(ctx context.Context, email string, code string) string
 	GetConnectURL(

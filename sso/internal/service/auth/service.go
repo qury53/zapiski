@@ -9,13 +9,33 @@ import (
 )
 
 type AuthService struct {
-	log             *logger.Logger
-	repository      UserRepository
-	smtp            Smtp
-	cacheClient     CacheClient
-	JWTSecret       []byte
-	AccessTokenTTL  time.Duration
-	RefreshTokenTTL time.Duration
+	log               *logger.Logger
+	userRepository    UserRepository
+	sessionRepository SessionRepository
+	encryptor         Encryptor
+	smtp              Smtp
+	cacheClient       CacheClient
+	JWTSecret         []byte
+	AccessTokenTTL    time.Duration
+	RefreshTokenTTL   time.Duration
+}
+
+type Encryptor interface {
+	HashToken(token string) string
+	GeneratePasswordHash(val string) (string, error)
+	CompareHashAndPassword(hash string, val string) error
+	GenerateVerificationCode(length int) (string, error)
+}
+
+type SessionRepository interface {
+	Create(ctx context.Context, s domain.Session) (domain.Session, error)
+	GetByJTI(ctx context.Context, jti string) (domain.Session, error)
+	GetByJTIForUpdate(ctx context.Context, jti string) (domain.Session, error)
+	Rotate(ctx context.Context, jti string, params domain.RotateParams) (domain.Session, error)
+	Revoke(ctx context.Context, jti string, reason string) error
+	RevokeAllForUser(ctx context.Context, userID int64, reason string) error
+	MarkCompromised(ctx context.Context, jti string, reason string) error
+	ListActiveByUserID(ctx context.Context, userID int64) ([]domain.Session, error)
 }
 
 type UserRepository interface {
@@ -41,13 +61,13 @@ type Smtp interface {
 func NewAuthService(
 	log *logger.Logger,
 	config *Config,
-	repository UserRepository,
+	userRepository UserRepository,
 	smtp Smtp,
 	cacheClient CacheClient,
 ) *AuthService {
 	return &AuthService{
 		log:             log,
-		repository:      repository,
+		userRepository:  userRepository,
 		smtp:            smtp,
 		cacheClient:     cacheClient,
 		JWTSecret:       []byte(config.JWTSecret),

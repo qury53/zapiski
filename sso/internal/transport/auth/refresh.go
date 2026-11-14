@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
-	"shared/pkg/logger"
 	ssov1 "shared/pkg/proto/sso/v1"
-	"strings"
 	"time"
 
 	core_transport_grpc_response "github.com/qury53/GC_learn/sso/internal/core/transport/grpc"
@@ -17,7 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// TODO: на
 func (t *AuthTransport) Refresh(
 	ctx context.Context,
 	req *ssov1.RefreshRequest,
@@ -61,44 +57,4 @@ func (t *AuthTransport) Refresh(
 	}
 
 	return resp, nil
-}
-
-// extractRefreshFromCookie достает refresh токен из cookie
-// если куки нет, то возвращается пустая строка
-// Returns: string
-
-func extractRefreshFromCookie(ctx context.Context) string {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return ""
-	}
-
-	var rawCookies []string
-	rawCookies = append(rawCookies, md.Get("grpcgateway-cookie")...)
-	rawCookies = append(rawCookies, md.Get("cookie")...)
-
-	if len(rawCookies) == 0 {
-		return ""
-	}
-
-	req := &http.Request{Header: http.Header{}}
-	for _, line := range rawCookies {
-		req.Header.Add("Cookie", strings.TrimSpace(line))
-	}
-
-	if cookie, err := req.Cookie("refresh_token"); err == nil {
-		return cookie.Value
-	}
-	return ""
-}
-
-// clearRefreshCookie очищает refresh_token куки если истек срок жизни
-//
-// Returns: error
-
-func clearRefreshCookie(ctx context.Context, log *logger.Logger) {
-	cookie := "refresh_token" + "=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
-	if err := grpc.SendHeader(ctx, metadata.Pairs("set-cookie", cookie)); err != nil {
-		log.Warn("failed to clear refresh cookie", slog.Any("error", err))
-	}
 }

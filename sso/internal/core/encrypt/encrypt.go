@@ -1,7 +1,10 @@
 package core_encrypt
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -9,6 +12,16 @@ import (
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 	"golang.org/x/crypto/bcrypt"
 )
+
+type Encryptor struct {
+	secret string
+}
+
+func NewEncryptor(config *Config) *Encryptor {
+	return &Encryptor{
+		secret: config.EncryptionSecret,
+	}
+}
 
 // GeneratePasswordHash генерит хэш пароля
 //
@@ -52,4 +65,14 @@ func GenerateVerificationCode(length int) (string, error) {
 	}
 
 	return code.String(), nil
+}
+
+// HashToken хэширует токен алгоритов SHA256
+//
+// Returns: string
+
+func (e *Encryptor) HashToken(token string) string {
+	h := hmac.New(sha256.New, []byte(e.secret))
+	h.Write([]byte(token))
+	return hex.EncodeToString(h.Sum(nil))
 }

@@ -23,7 +23,7 @@ func (s *AuthService) Register(
 	}
 
 	user.Password = hash
-	user, err = s.repository.SaveUser(ctx, user)
+	user, err = s.userRepository.SaveUser(ctx, user)
 	if err != nil {
 		return 0, domain.StatusUnknown, fmt.Errorf(
 			"save user to db: %w",
