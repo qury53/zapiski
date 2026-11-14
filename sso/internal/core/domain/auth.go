@@ -16,6 +16,15 @@ const (
 	ProviderYandex Provider = "yandex"
 )
 
+const (
+	// revokedReasonRotated — причина отзыва, которую проставляет Rotate у старой сессии.
+	RevokedReasonRotated = "rotated"
+	// revokedReasonRefreshReuse — причина отзыва при компрометации всей ветки.
+	RevokedReasonRefreshReuse = "refresh_reuse"
+	// revokedReasonLogout - причина отзыва при выходе из аккаунта
+	RevokedReasonLogout = "logout"
+)
+
 // CodeChallengeMethod определяет метод хеширования PKCE
 type CodeChallengeMethod string
 

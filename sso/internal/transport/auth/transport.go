@@ -28,7 +28,7 @@ type AuthService interface {
 	Refresh(ctx context.Context, refreshToken string) (string, string, error)
 	Logout(ctx context.Context, refreshToken string) error
 	GetRefreshTokenTTL() time.Duration
-	VerifyEmail(ctx context.Context, email string, code string) string
+	VerifyEmail(ctx context.Context, email string, code string) domain.VerificationStatus
 	GetConnectURL(
 		ctx context.Context,
 		provider domain.Provider,

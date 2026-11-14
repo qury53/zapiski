@@ -16,13 +16,6 @@ import (
 // Оборачивает ErrUnauthorized, чтобы транспорт отвечал клиенту 401.
 var ErrRefreshTokenReuse = fmt.Errorf("%w: refresh token reuse", core_errors.ErrUnauthorized)
 
-const (
-	// revokedReasonRotated — причина отзыва, которую проставляет Rotate у старой сессии.
-	revokedReasonRotated = "rotated"
-	// revokedReasonRefreshReuse — причина отзыва при компрометации всей ветки.
-	revokedReasonRefreshReuse = "refresh_reuse"
-)
-
 // Refresh обменивает refresh токен на новую пару access/refresh:
 // старая сессия отзывается, новая создаётся дочерней (ротация).
 //
@@ -143,7 +136,7 @@ func (s *AuthService) checkSessionState(
 ) error {
 	if session.RevokedAt != nil {
 		// Ротированный токен пришёл повторно — значит, им уже воспользовались.
-		if session.RevokedReason != nil && *session.RevokedReason == revokedReasonRotated {
+		if session.RevokedReason != nil && *session.RevokedReason == domain.RevokedReasonRotated {
 			return fmt.Errorf("%w: session %s already rotated", ErrRefreshTokenReuse, session.JTI)
 		}
 
@@ -181,7 +174,7 @@ func (s *AuthService) handleRefreshReuse(ctx context.Context, session domain.Ses
 	if err := s.sessionRepository.MarkCompromised(
 		ctx,
 		session.JTI,
-		revokedReasonRefreshReuse,
+		domain.RevokedReasonRefreshReuse,
 	); err != nil {
 		s.log.Error("refresh: mark session chain compromised",
 			"jti", session.JTI,
