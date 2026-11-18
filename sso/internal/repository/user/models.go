@@ -11,7 +11,7 @@ type UserModel struct {
 	ID        int64      `db:"id"`
 	Version   int64      `db:"version"`
 	Username  string     `db:"username"`
-	Password  string     `db:"password"`
+	Password  *string    `db:"password"`
 	Email     string     `db:"email"`
 	State     string     `db:"state"`
 	CreatedAt time.Time  `db:"created_at"`
@@ -23,11 +23,16 @@ type UserModel struct {
 // Returns: domain.User
 
 func modelToDomain(dto UserModel) domain.User {
+	var password string
+	if dto.Password != nil {
+		password = *dto.Password
+	}
+
 	return domain.User{
 		ID:       dto.ID,
 		Version:  dto.Version,
 		Username: dto.Username,
-		Password: dto.Password,
+		Password: password,
 		Email:    dto.Email,
 		State: domain.VerificationStatus(
 			mapDBVerificationStatusToDomain(dto.State),

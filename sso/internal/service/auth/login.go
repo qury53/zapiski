@@ -3,8 +3,8 @@ package auth_service
 import (
 	"context"
 	"fmt"
+	"net/netip"
 
-	core_encrypt "github.com/qury53/GC_learn/sso/internal/core/encrypt"
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 )
 
@@ -12,8 +12,10 @@ func (s *AuthService) Login(
 	ctx context.Context,
 	username string,
 	password string,
+	userAgent *string,
+	ipAddr *netip.Addr,
 ) (string, string, int64, error) {
-	user, err := s.repository.GetUserByUsername(ctx, username)
+	user, err := s.userRepository.GetUserByUsername(ctx, username)
 	if err != nil {
 		return "", "", 0, fmt.Errorf(
 			"service: get user by username: %w",
@@ -26,7 +28,7 @@ func (s *AuthService) Login(
 		return "", "", 0, core_errors.ErrInvalidCredentials
 	}
 
-	if err := core_encrypt.CompareHashAndPassword(
+	if err := s.encryptor.CompareHashAndPassword(
 		user.Password,
 		password,
 	); err != nil {
@@ -36,15 +38,5 @@ func (s *AuthService) Login(
 		)
 	}
 
-	accessToken, err := s.GenerateAccessToken(user.ID)
-	if err != nil {
-		return "", "", 0, fmt.Errorf("service: generate access token: %w", err)
-	}
-
-	refreshToken, err := s.GenerateRefreshToken(user.ID)
-	if err != nil {
-		return "", "", 0, fmt.Errorf("service: generate refresh token: %w", err)
-	}
-
-	return accessToken, refreshToken, user.ID, nil
+	return s.issueSession(ctx, user.ID, userAgent, ipAddr)
 }

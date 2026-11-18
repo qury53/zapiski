@@ -10,6 +10,23 @@ import (
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 )
 
+// GetUserByEmail возвращает пользователя по email без учета регистра.
+//
+// Returns: domain.User, error
+
+func (r *UserRepository) GetUserByEmail(
+	ctx context.Context,
+	email string,
+) (domain.User, error) {
+	const query = `
+		SELECT id, version, username, password, email, state, created_at, updated_at
+		FROM zapiski.users
+		WHERE lower(email) = lower($1)
+	`
+
+	return r.getUser(ctx, query, email)
+}
+
 // GetUserByUsername возвращает найденого пользователя по имени, если его нет,
 // то возвращает ошибку ErrNotFound
 //
@@ -19,13 +36,25 @@ func (r *UserRepository) GetUserByUsername(
 	ctx context.Context,
 	username string,
 ) (domain.User, error) {
-	query := `
+	const query = `
 		SELECT id, version, username, password, email, state, created_at, updated_at
 		FROM zapiski.users
 		WHERE username = $1;
 	`
 
-	row := r.pool.QueryRow(ctx, query, username)
+	return r.getUser(ctx, query, username)
+}
+
+// getUser выполняет запрос и мапит строку в доменную сущность.
+//
+// Returns: domain.User, error
+
+func (r *UserRepository) getUser(
+	ctx context.Context,
+	query string,
+	value string,
+) (domain.User, error) {
+	row := r.pool.QueryRow(ctx, query, value)
 	var userModel UserModel
 	if err := row.Scan(
 		&userModel.ID,

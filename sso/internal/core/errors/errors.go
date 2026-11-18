@@ -10,4 +10,11 @@ var (
 	ErrTooManyRequest     = errors.New("too many requests")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrForbidden          = errors.New("forbidden")
+
+	ErrSessionRevoked = errors.New("session revoked")
+	ErrSessionExpired = errors.New("session expired")
+
+	ErrTokenExpired = errors.New("token expired")
+
+	ErrUnsupportedProvider = errors.New("unsupported provider")
 )

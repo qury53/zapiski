@@ -41,9 +41,12 @@ func (u *User) Validate() error {
 		return fmt.Errorf("username length should be between 3 and 32: %w", core_errors.ErrInvalidArgument)
 	}
 
-	passwordLen := utf8.RuneCountInString(u.Password)
-	if passwordLen < 6 || passwordLen > 72 {
-		return fmt.Errorf("password length should be between 6 and 72: %w", core_errors.ErrInvalidArgument)
+	// Пароль может отсутствовать: OAuth-пользователи создаются без него.
+	if u.Password != "" {
+		passwordLen := utf8.RuneCountInString(u.Password)
+		if passwordLen < 6 || passwordLen > 72 {
+			return fmt.Errorf("password length should be between 6 and 72: %w", core_errors.ErrInvalidArgument)
+		}
 	}
 
 	_, err := mail.ParseAddress(u.Email)

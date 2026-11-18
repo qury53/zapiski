@@ -22,6 +22,8 @@ func RespondCode(err error) codes.Code {
 		code = codes.PermissionDenied
 	case errors.Is(err, core_errors.ErrInvalidCredentials):
 		code = codes.Unauthenticated
+	case errors.Is(err, core_errors.ErrUnsupportedProvider):
+		code = codes.InvalidArgument
 	default:
 		code = codes.Internal
 	}
