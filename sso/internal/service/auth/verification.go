@@ -2,9 +2,7 @@ package auth_service
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -45,20 +43,6 @@ func (s *AuthService) verificationCodeAttemptsCacheKey(email string) string {
 // не дойдёт до пользователя: иначе кулдаун заблокирует повторную отправку.
 func (s *AuthService) dropVerificationCode(ctx context.Context, email string) error {
 	return s.cacheClient.Del(ctx, s.verificationCacheKey(email))
-}
-
-// GenerateVerificationCode отвечает за генерацию 6-значного криптостойкого кода
-func (s *AuthService) GenerateVerificationCode() (string, error) {
-	max := big.NewInt(900000)
-
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate random bytes: %w", err)
-	}
-
-	code := n.Int64() + 100000
-
-	return fmt.Sprintf("%d", code), nil
 }
 
 // CacheVerificationCode проверяет кулдаун и сохраняет сгенерированный код в кэш

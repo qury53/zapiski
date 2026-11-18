@@ -1,8 +1,6 @@
 package oauth_postgres_repository
 
-import (
-	core_repository_postgres "github.com/qury53/GC_learn/sso/internal/core/repository/postgres"
-)
+import pgx_pool "github.com/qury53/GC_learn/platform/postgres"
 
 // колонки oauth аккаунта в бд
 const oauthAccountColumns = `
@@ -18,7 +16,7 @@ const oauthAccountColumns = `
 
 // OAuthRepository отвечает за привязки внешних OAuth аккаунтов
 type OAuthRepository struct {
-	pool *core_repository_postgres.Pool
+	pool *pgx_pool.Pool
 }
 
 // NewOAuthRepository конструктор OAuthRepository
@@ -26,7 +24,7 @@ type OAuthRepository struct {
 // Returns: *OAuthRepository
 
 func NewOAuthRepository(
-	pool *core_repository_postgres.Pool,
+	pool *pgx_pool.Pool,
 ) *OAuthRepository {
 	return &OAuthRepository{
 		pool: pool,

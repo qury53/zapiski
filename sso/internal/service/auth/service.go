@@ -2,9 +2,9 @@ package auth_service
 
 import (
 	"context"
-	"shared/pkg/logger"
 	"time"
 
+	"github.com/qury53/GC_learn/platform/logger"
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
 	core_oauth "github.com/qury53/GC_learn/sso/internal/core/oauth"
 	"github.com/redis/go-redis/v9"

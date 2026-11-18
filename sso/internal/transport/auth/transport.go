@@ -5,9 +5,9 @@ import (
 	"net/netip"
 	"time"
 
-	"shared/pkg/logger"
 	ssov1 "shared/pkg/proto/sso/v1"
 
+	"github.com/qury53/GC_learn/platform/logger"
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
 	oauth_transport "github.com/qury53/GC_learn/sso/internal/transport/oauth"
 )
@@ -19,7 +19,7 @@ import (
 type AuthTransport struct {
 	log *logger.Logger
 	ssov1.UnimplementedAuthServiceServer
-	oauth *oauth_transport.OAuthTransport
+	oauth   *oauth_transport.OAuthTransport
 	service AuthService
 }
 

@@ -1,4 +1,4 @@
-package core_repository_redis
+package redis
 
 import (
 	"context"
