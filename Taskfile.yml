@@ -68,6 +68,19 @@ tasks:
         down
         {{.CLI_ARGS}} 
 
+  migrate-force:
+    deps:
+      - docker-up
+    desc: "Сбрасывает dirty-состояние на указанную версию: task migrate-force v=16"
+    requires:
+      vars:
+        - v
+    cmds:
+      - docker compose run --rm zapiski-postgres-migrate
+        -path=/migrations
+        -database={{.POSTGRES_URL}}
+        force {{.v}}
+
   docker-up:
     desc: "Поднимает все докер контейнеры"
     cmds:

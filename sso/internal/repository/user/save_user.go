@@ -28,7 +28,7 @@ func (r *UserRepository) SaveUser(
 		user.Email,
 	)
 
-	var userModel User
+	var userModel UserModel
 	if err := row.Scan(
 		&userModel.ID,
 		&userModel.Version,
@@ -47,5 +47,5 @@ func (r *UserRepository) SaveUser(
 		return domain.User{}, fmt.Errorf("scan error: %w", err)
 	}
 
-	return dtoToDomain(userModel), nil
+	return modelToDomain(userModel), nil
 }

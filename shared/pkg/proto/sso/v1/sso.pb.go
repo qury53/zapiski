@@ -29,8 +29,7 @@ const (
 	AuthStatus_AUTH_STATUS_UNSPECIFIED          AuthStatus = 0
 	AuthStatus_AUTH_STATUS_ACTIVE               AuthStatus = 1
 	AuthStatus_AUTH_STATUS_PENDING_VERIFICATION AuthStatus = 2
-	AuthStatus_AUTH_STATUS_MFA_REQUIRED         AuthStatus = 3
-	AuthStatus_AUTH_STATUS_BLOCKED              AuthStatus = 4
+	AuthStatus_AUTH_STATUS_BLOCKED              AuthStatus = 3
 )
 
 // Enum value maps for AuthStatus.
@@ -39,15 +38,13 @@ var (
 		0: "AUTH_STATUS_UNSPECIFIED",
 		1: "AUTH_STATUS_ACTIVE",
 		2: "AUTH_STATUS_PENDING_VERIFICATION",
-		3: "AUTH_STATUS_MFA_REQUIRED",
-		4: "AUTH_STATUS_BLOCKED",
+		3: "AUTH_STATUS_BLOCKED",
 	}
 	AuthStatus_value = map[string]int32{
 		"AUTH_STATUS_UNSPECIFIED":          0,
 		"AUTH_STATUS_ACTIVE":               1,
 		"AUTH_STATUS_PENDING_VERIFICATION": 2,
-		"AUTH_STATUS_MFA_REQUIRED":         3,
-		"AUTH_STATUS_BLOCKED":              4,
+		"AUTH_STATUS_BLOCKED":              3,
 	}
 )
 
@@ -344,7 +341,6 @@ type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	UserId        int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Status        AuthStatus             `protobuf:"varint,4,opt,name=status,proto3,enum=sso.v1.AuthStatus" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -391,13 +387,6 @@ func (x *LoginResponse) GetUserId() int64 {
 		return x.UserId
 	}
 	return 0
-}
-
-func (x *LoginResponse) GetStatus() AuthStatus {
-	if x != nil {
-		return x.Status
-	}
-	return AuthStatus_AUTH_STATUS_UNSPECIFIED
 }
 
 type RefreshRequest struct {
@@ -447,6 +436,7 @@ func (x *RefreshRequest) GetRefreshToken() string {
 type RefreshResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -484,6 +474,13 @@ func (*RefreshResponse) Descriptor() ([]byte, []int) {
 func (x *RefreshResponse) GetAccessToken() string {
 	if x != nil {
 		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
 	}
 	return ""
 }
@@ -830,15 +827,15 @@ const file_sso_v1_sso_proto_rawDesc = "" +
 	"\x06status\x18\x02 \x01(\x0e2\x12.sso.v1.AuthStatusR\x06status\"F\n" +
 	"\fLoginRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"w\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"K\n" +
 	"\rLoginResponse\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12*\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x12.sso.v1.AuthStatusR\x06status\"5\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\"5\n" +
 	"\x0eRefreshRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"4\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"Y\n" +
 	"\x0fRefreshResponse\x12!\n" +
-	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"4\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"4\n" +
 	"\rLogoutRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\">\n" +
 	"\x12VerifyEmailRequest\x12\x14\n" +
@@ -859,14 +856,13 @@ const file_sso_v1_sso_proto_rawDesc = "" +
 	"\bprovider\x18\x01 \x01(\x0e2\x15.sso.v1.OAuthProviderR\bprovider\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12\x14\n" +
 	"\x05state\x18\x03 \x01(\tR\x05state\x12#\n" +
-	"\rcode_verifier\x18\x04 \x01(\tR\fcodeVerifier*\x9e\x01\n" +
+	"\rcode_verifier\x18\x04 \x01(\tR\fcodeVerifier*\x80\x01\n" +
 	"\n" +
 	"AuthStatus\x12\x1b\n" +
 	"\x17AUTH_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12AUTH_STATUS_ACTIVE\x10\x01\x12$\n" +
-	" AUTH_STATUS_PENDING_VERIFICATION\x10\x02\x12\x1c\n" +
-	"\x18AUTH_STATUS_MFA_REQUIRED\x10\x03\x12\x17\n" +
-	"\x13AUTH_STATUS_BLOCKED\x10\x04*\x80\x01\n" +
+	" AUTH_STATUS_PENDING_VERIFICATION\x10\x02\x12\x17\n" +
+	"\x13AUTH_STATUS_BLOCKED\x10\x03*\x80\x01\n" +
 	"\rOAuthProvider\x12\x1e\n" +
 	"\x1aOAUTH_PROVIDER_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15OAUTH_PROVIDER_GOOGLE\x10\x01\x12\x19\n" +
@@ -920,30 +916,29 @@ var file_sso_v1_sso_proto_goTypes = []any{
 }
 var file_sso_v1_sso_proto_depIdxs = []int32{
 	0,  // 0: sso.v1.RegisterResponse.status:type_name -> sso.v1.AuthStatus
-	0,  // 1: sso.v1.LoginResponse.status:type_name -> sso.v1.AuthStatus
-	0,  // 2: sso.v1.VerifyEmailResponse.status:type_name -> sso.v1.AuthStatus
-	1,  // 3: sso.v1.OAuthConnectRequest.provider:type_name -> sso.v1.OAuthProvider
-	2,  // 4: sso.v1.OAuthConnectRequest.code_challenge_method:type_name -> sso.v1.CodeChallengeMethod
-	1,  // 5: sso.v1.OAuthCallbackRequest.provider:type_name -> sso.v1.OAuthProvider
-	3,  // 6: sso.v1.AuthService.Register:input_type -> sso.v1.RegisterRequest
-	5,  // 7: sso.v1.AuthService.Login:input_type -> sso.v1.LoginRequest
-	7,  // 8: sso.v1.AuthService.Refresh:input_type -> sso.v1.RefreshRequest
-	9,  // 9: sso.v1.AuthService.Logout:input_type -> sso.v1.LogoutRequest
-	10, // 10: sso.v1.AuthService.VerifyEmail:input_type -> sso.v1.VerifyEmailRequest
-	12, // 11: sso.v1.AuthService.GetOAuthConnectUrl:input_type -> sso.v1.OAuthConnectRequest
-	14, // 12: sso.v1.AuthService.HandleOAuthCallback:input_type -> sso.v1.OAuthCallbackRequest
-	4,  // 13: sso.v1.AuthService.Register:output_type -> sso.v1.RegisterResponse
-	6,  // 14: sso.v1.AuthService.Login:output_type -> sso.v1.LoginResponse
-	8,  // 15: sso.v1.AuthService.Refresh:output_type -> sso.v1.RefreshResponse
-	15, // 16: sso.v1.AuthService.Logout:output_type -> google.protobuf.Empty
-	11, // 17: sso.v1.AuthService.VerifyEmail:output_type -> sso.v1.VerifyEmailResponse
-	13, // 18: sso.v1.AuthService.GetOAuthConnectUrl:output_type -> sso.v1.OAuthConnectResponse
-	6,  // 19: sso.v1.AuthService.HandleOAuthCallback:output_type -> sso.v1.LoginResponse
-	13, // [13:20] is the sub-list for method output_type
-	6,  // [6:13] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	0,  // 1: sso.v1.VerifyEmailResponse.status:type_name -> sso.v1.AuthStatus
+	1,  // 2: sso.v1.OAuthConnectRequest.provider:type_name -> sso.v1.OAuthProvider
+	2,  // 3: sso.v1.OAuthConnectRequest.code_challenge_method:type_name -> sso.v1.CodeChallengeMethod
+	1,  // 4: sso.v1.OAuthCallbackRequest.provider:type_name -> sso.v1.OAuthProvider
+	3,  // 5: sso.v1.AuthService.Register:input_type -> sso.v1.RegisterRequest
+	5,  // 6: sso.v1.AuthService.Login:input_type -> sso.v1.LoginRequest
+	7,  // 7: sso.v1.AuthService.Refresh:input_type -> sso.v1.RefreshRequest
+	9,  // 8: sso.v1.AuthService.Logout:input_type -> sso.v1.LogoutRequest
+	10, // 9: sso.v1.AuthService.VerifyEmail:input_type -> sso.v1.VerifyEmailRequest
+	12, // 10: sso.v1.AuthService.GetOAuthConnectUrl:input_type -> sso.v1.OAuthConnectRequest
+	14, // 11: sso.v1.AuthService.HandleOAuthCallback:input_type -> sso.v1.OAuthCallbackRequest
+	4,  // 12: sso.v1.AuthService.Register:output_type -> sso.v1.RegisterResponse
+	6,  // 13: sso.v1.AuthService.Login:output_type -> sso.v1.LoginResponse
+	8,  // 14: sso.v1.AuthService.Refresh:output_type -> sso.v1.RefreshResponse
+	15, // 15: sso.v1.AuthService.Logout:output_type -> google.protobuf.Empty
+	11, // 16: sso.v1.AuthService.VerifyEmail:output_type -> sso.v1.VerifyEmailResponse
+	13, // 17: sso.v1.AuthService.GetOAuthConnectUrl:output_type -> sso.v1.OAuthConnectResponse
+	6,  // 18: sso.v1.AuthService.HandleOAuthCallback:output_type -> sso.v1.LoginResponse
+	12, // [12:19] is the sub-list for method output_type
+	5,  // [5:12] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_sso_v1_sso_proto_init() }

@@ -23,7 +23,7 @@ func (s *AuthService) Register(
 	}
 
 	user.Password = hash
-	user, err = s.repository.SaveUser(ctx, user)
+	user, err = s.userRepository.SaveUser(ctx, user)
 	if err != nil {
 		return 0, domain.StatusUnknown, fmt.Errorf(
 			"save user to db: %w",
@@ -55,6 +55,12 @@ func (s *AuthService) Register(
 		user.Email,
 		verificationCode,
 	); err != nil {
+		// Код не дошёл до пользователя — убираем его из кэша, иначе
+		// кулдаун заблокирует повторную отправку на 5 минут.
+		if dropErr := s.dropVerificationCode(ctx, user.Email); dropErr != nil {
+			s.log.Warn("failed to drop verification code", slog.String("error", dropErr.Error()))
+		}
+
 		return 0, domain.StatusUnknown, fmt.Errorf(
 			"send verification code: %w",
 			err,

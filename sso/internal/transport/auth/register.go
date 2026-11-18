@@ -22,7 +22,7 @@ func (t *AuthTransport) Register(
 
 	if err := user.Validate(); err != nil {
 		t.log.Debug("validation error", slog.String("error", err.Error()))
-		return &ssov1.RegisterResponse{}, status.Error(
+		return nil, status.Error(
 			core_transport_grpc_response.RespondCode(err),
 			"validation error",
 		)
@@ -31,7 +31,7 @@ func (t *AuthTransport) Register(
 	user_id, verificationStatus, err := t.service.Register(ctx, user)
 	if err != nil {
 		t.log.Debug("register error", slog.String("error", err.Error()))
-		return &ssov1.RegisterResponse{}, status.Error(
+		return nil, status.Error(
 			core_transport_grpc_response.RespondCode(err),
 			"failed to register",
 		)
