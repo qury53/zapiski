@@ -34,15 +34,13 @@ type Client struct {
 //
 // Returns: *Client
 func NewClient(
-	clientID string,
-	clientSecret string,
-	redirectURI string,
+	config *Config,
 ) *Client {
 	return &Client{
 		config: &oauth2.Config{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  redirectURI,
+			ClientID:     config.ClientID,
+			ClientSecret: config.ClientSecret,
+			RedirectURL:  config.RedirectURI,
 			Endpoint:     google.Endpoint,
 			Scopes:       []string{"openid", "email", "profile"},
 		},

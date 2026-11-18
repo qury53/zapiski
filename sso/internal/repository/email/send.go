@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 )
 
-func (r *SmtpRepository) SendVerificationCode(
+func (r *SmtpRepository) Send(
 	ctx context.Context,
 	toEmail string,
 	code string,

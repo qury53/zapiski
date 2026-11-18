@@ -2,7 +2,7 @@ package sessions_postgres_repository
 
 import (
 	"github.com/jackc/pgx/v5"
-	core_repository_postgres "github.com/qury53/GC_learn/sso/internal/core/repository/postgres"
+	pgx_pool "github.com/qury53/GC_learn/platform/postgres"
 )
 
 // колонки сессии в бд
@@ -23,7 +23,7 @@ const sessionColumns = `
 
 // SessionRepository отвечает за сессии пользователя
 type SessionRepository struct {
-	pool *core_repository_postgres.Pool
+	pool *pgx_pool.Pool
 }
 
 // NewSessonRepository конструктор SessionRepository
@@ -31,7 +31,7 @@ type SessionRepository struct {
 // Returns: *SessionRepository
 
 func NewSessionRepository(
-	pool *core_repository_postgres.Pool,
+	pool *pgx_pool.Pool,
 ) *SessionRepository {
 	return &SessionRepository{
 		pool: pool,

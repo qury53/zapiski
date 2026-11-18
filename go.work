@@ -1,6 +1,7 @@
 go 1.26.9
 
 use (
+    ./platform
     ./agent
     ./shared
     ./sso

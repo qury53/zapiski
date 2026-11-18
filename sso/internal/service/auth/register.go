@@ -6,14 +6,17 @@ import (
 	"log/slog"
 
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
-	core_encrypt "github.com/qury53/GC_learn/sso/internal/core/encrypt"
+)
+
+const (
+	codeLength = 6
 )
 
 func (s *AuthService) Register(
 	ctx context.Context,
 	user domain.User,
 ) (int64, domain.VerificationStatus, error) {
-	hash, err := core_encrypt.GeneratePasswordHash(user.Password)
+	hash, err := s.encryptor.GeneratePasswordHash(user.Password)
 	if err != nil {
 		s.log.Debug("failed to generate password hash", slog.String("error", err.Error()))
 		return 0, domain.StatusUnknown, fmt.Errorf(
@@ -32,7 +35,7 @@ func (s *AuthService) Register(
 	}
 
 	s.log.Debug("creating verification code")
-	verificationCode, err := s.GenerateVerificationCode()
+	verificationCode, err := s.encryptor.GenerateVerificationCode()
 
 	if err != nil {
 		return 0, domain.StatusUnknown, fmt.Errorf(
