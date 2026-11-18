@@ -36,7 +36,6 @@ message LoginRequest {
 
 message LoginResponse {
   string access_token = 1;
-  int64 user_id = 3;
 }
 
 message RefreshRequest {
@@ -63,7 +62,7 @@ message VerifyEmailResponse {
 
 message OAuthConnectRequest {
   OAuthProvider provider = 1;
-  string redirect_uri = 2;
+  string redirect_url = 2;
   string code_challenge = 3;
   CodeChallengeMethod code_challenge_method = 4;
 }
