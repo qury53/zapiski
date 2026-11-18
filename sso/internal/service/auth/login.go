@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
-	"time"
 
-	"github.com/google/uuid"
-	"github.com/qury53/GC_learn/sso/internal/core/domain"
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 )
 
@@ -41,36 +38,5 @@ func (s *AuthService) Login(
 		)
 	}
 
-	jti := uuid.NewString()
-	now := time.Now()
-	expiresAt := now.Add(s.RefreshTokenTTL)
-
-	refreshToken, err := s.GenerateRefreshToken(user.ID, jti)
-	if err != nil {
-		return "", "", 0, fmt.Errorf("service: generate refresh token: %w", err)
-	}
-
-	session := domain.NewSessionUninitialized(
-		user.ID,
-		jti,
-		s.encryptor.HashToken(refreshToken),
-		userAgent,
-		ipAddr,
-		expiresAt,
-		nil,
-	)
-
-	if _, err = s.sessionRepository.Create(ctx, session); err != nil {
-		return "", "", 0, fmt.Errorf(
-			"failed create session: %w",
-			err,
-		)
-	}
-
-	accessToken, err := s.GenerateAccessToken(user.ID)
-	if err != nil {
-		return "", "", 0, fmt.Errorf("service: generate access token: %w", err)
-	}
-
-	return accessToken, refreshToken, user.ID, nil
+	return s.issueSession(ctx, user.ID, userAgent, ipAddr)
 }

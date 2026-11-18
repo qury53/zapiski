@@ -66,3 +66,20 @@ func (c *Client) GenerateCacheKey(args ...string) string {
 func (c *Client) Incr(ctx context.Context, key string) (int64, error) {
 	return c.Client.Incr(ctx, key).Result()
 }
+
+func (c *Client) GetDel(
+	ctx context.Context,
+	key string,
+	dst any,
+) (bool, error) {
+	data, err := c.Client.GetDel(ctx, key).Bytes()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to GetDel: %w", err)
+	}
+
+	return true, json.Unmarshal(data, dst)
+}

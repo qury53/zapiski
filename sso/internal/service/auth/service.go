@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
+	core_oauth "github.com/qury53/GC_learn/sso/internal/core/oauth"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -13,6 +14,10 @@ type AuthService struct {
 	log               *logger.Logger
 	userRepository    UserRepository
 	sessionRepository SessionRepository
+	oauthRepository   OAuthRepository
+	oauthClients      map[domain.Provider]core_oauth.Client
+	allowedRedirects  map[string]struct{}
+	oauthStateTTL     time.Duration
 	encryptor         Encryptor
 	smtp              Smtp
 	cacheClient       CacheClient
@@ -39,9 +44,18 @@ type SessionRepository interface {
 	ListActiveByUserID(ctx context.Context, userID int64) ([]domain.Session, error)
 }
 
+type OAuthRepository interface {
+	GetByProviderUserID(ctx context.Context, provider domain.Provider, providerUserID string) (domain.OAuthAccount, error)
+	Create(ctx context.Context, account domain.OAuthAccount) (domain.OAuthAccount, error)
+	Touch(ctx context.Context, id int64, email string, emailVerified bool) error
+}
+
 type UserRepository interface {
 	SaveUser(ctx context.Context, user domain.User) (domain.User, error)
 	GetUserByUsername(ctx context.Context, username string) (domain.User, error)
+	GetUserByEmail(ctx context.Context, email string) (domain.User, error)
+	GetUserByID(ctx context.Context, id int64) (domain.User, error)
+	CreateOAuthUser(ctx context.Context, username string, email string) (domain.User, error)
 	ActivateUser(ctx context.Context, email string) error
 }
 
@@ -52,6 +66,7 @@ type CacheClient interface {
 	SetWithTTL(ctx context.Context, key string, value any, ttl time.Duration) error
 	Incr(ctx context.Context, key string) (int64, error)
 	Del(ctx context.Context, key string) error
+	GetDel(ctx context.Context, key string, dst any) (bool, error)
 	GenerateCacheKey(args ...string) string
 }
 
@@ -67,16 +82,31 @@ func NewAuthService(
 	log *logger.Logger,
 	config *Config,
 	userRepository UserRepository,
+	sessionRepository SessionRepository,
+	oauthRepository OAuthRepository,
+	encryptor Encryptor,
 	smtp Smtp,
 	cacheClient CacheClient,
+	oauthClients map[domain.Provider]core_oauth.Client,
 ) *AuthService {
+	allowedRedirects := make(map[string]struct{}, len(config.OAuthAllowedRedirectURIs))
+	for _, uri := range config.OAuthAllowedRedirectURIs {
+		allowedRedirects[uri] = struct{}{}
+	}
+
 	return &AuthService{
-		log:             log,
-		userRepository:  userRepository,
-		smtp:            smtp,
-		cacheClient:     cacheClient,
-		JWTSecret:       []byte(config.JWTSecret),
-		AccessTokenTTL:  config.AccessTokenTTL,
-		RefreshTokenTTL: config.RefreshTokenTTL,
+		log:               log,
+		userRepository:    userRepository,
+		sessionRepository: sessionRepository,
+		oauthRepository:   oauthRepository,
+		oauthClients:      oauthClients,
+		allowedRedirects:  allowedRedirects,
+		oauthStateTTL:     config.OAuthStateTTL,
+		encryptor:         encryptor,
+		smtp:              smtp,
+		cacheClient:       cacheClient,
+		JWTSecret:         []byte(config.JWTSecret),
+		AccessTokenTTL:    config.AccessTokenTTL,
+		RefreshTokenTTL:   config.RefreshTokenTTL,
 	}
 }

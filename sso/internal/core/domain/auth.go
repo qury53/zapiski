@@ -16,6 +16,12 @@ const (
 	ProviderYandex Provider = "yandex"
 )
 
+var SupportedProviders = map[Provider]struct{}{
+	ProviderGoogle: {},
+	ProviderGithub: {},
+	ProviderYandex: {},
+}
+
 const (
 	// revokedReasonRotated — причина отзыва, которую проставляет Rotate у старой сессии.
 	RevokedReasonRotated = "rotated"
@@ -33,6 +39,20 @@ const (
 )
 
 var ErrUnsupportedProvider = errors.New("unsupported oauth provider")
+
+// OAuthAccount — привязка внешнего OAuth аккаунта к локальному пользователю.
+// ProviderUserID — стабильный идентификатор у провайдера (Google sub),
+// email у провайдера может меняться.
+type OAuthAccount struct {
+	ID             int64
+	UserID         int64
+	Provider       Provider
+	ProviderUserID string
+	Email          string
+	EmailVerified  bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
 
 // Session - сессия пользователя
 type Session struct {

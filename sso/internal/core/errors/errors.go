@@ -15,4 +15,6 @@ var (
 	ErrSessionExpired = errors.New("session expired")
 
 	ErrTokenExpired = errors.New("token expired")
+
+	ErrUnsupportedProvider = errors.New("unsupported provider")
 )
