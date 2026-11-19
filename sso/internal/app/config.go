@@ -1,13 +1,15 @@
-package app
+package application
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	GRPCPort string `envconfig:"GRPC_PORT" required:"true"`
+	GRPCPort     string        `envconfig:"GRPC_PORT" required:"true"`
+	ShutdownTime time.Duration `envconfig:"SHUTDOWN_TIME" default:"30s"`
 }
 
 func NewConfig() (*Config, error) {

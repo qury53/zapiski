@@ -14,11 +14,12 @@ type Config struct {
 	RefreshTokenTTL time.Duration `envconfig:"REFRESH_TOKEN_TTL" default:"720h"`
 	AccessTokenTTL  time.Duration `envconfig:"ACCESS_TOKEN_TTL" default:"900s"`
 
-	GoogleClientID           string        `envconfig:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret       string        `envconfig:"GOOGLE_CLIENT_SECRET"`
-	OAuthRedirectURI         string        `envconfig:"OAUTH_REDIRECT_URI"`
+	//мб лишнее хз, уже есть в клиенте, но в env все равно прописал хуле
+	//GoogleClientID           string        `envconfig:"GOOGLE_CLIENT_ID" required:"true"`
+	//GoogleClientSecret       string        `envconfig:"GOOGLE_CLIENT_SECRET" required:"true"`
+	//OAuthRedirectURI         string        `envconfig:"OAUTH_REDIRECT_URI" required:"true"`
 	OAuthStateTTL            time.Duration `envconfig:"OAUTH_STATE_TTL" default:"10m"`
-	OAuthAllowedRedirectURIs []string      `envconfig:"OAUTH_ALLOWED_REDIRECT_URIS"`
+	OAuthAllowedRedirectURIs []string      `envconfig:"OAUTH_ALLOWED_REDIRECT_URIS" required:"true"`
 }
 
 // NewConfig создат конфиг для AuthService

@@ -19,7 +19,7 @@ const (
 	resLocked   int64 = -2
 )
 
-func (s *AuthService) VerifyEmailBeta(
+func (s *AuthService) VerifyEmail(
 	ctx context.Context,
 	email string,
 	code string,

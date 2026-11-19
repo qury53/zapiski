@@ -30,7 +30,7 @@ type Encryptor interface {
 	HashToken(token string) string
 	GeneratePasswordHash(val string) (string, error)
 	CompareHashAndPassword(hash string, val string) error
-	GenerateVerificationCode(length int) (string, error)
+	GenerateVerificationCode() (string, error)
 }
 
 type SessionRepository interface {
