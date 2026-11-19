@@ -39,3 +39,7 @@ func NewClient(ctx context.Context, config *Config) (*Client, error) {
 		timeout: config.CacheTTL,
 	}, nil
 }
+
+func (c *Client) Close() error {
+	return c.Client.Close()
+}

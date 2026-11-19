@@ -83,11 +83,25 @@ tasks:
 
   docker-up:
     desc: "Поднимает все докер контейнеры"
+    deps:
+      - docker-obs-up
     cmds:
       - docker compose up -d
 
+  docker-obs-up:
+    desc: "Поднимает сервисы сбора логов и метрик"
+    cmds:
+      - docker compose -f observability/docker-compose.obs.yml up -d
+
+  docker-obs-down:
+    desc: "Останавливает сервисы сбора логов и метрик"
+    cmds:
+      - docker compose -f observability/docker-compose.obs.yml down
+
   docker-down:
     desc: "Останавливает все докер контейнеры"
+    deps:
+      - docker-obs-down
     cmds:
       - docker compose down
 
@@ -117,6 +131,21 @@ tasks:
       - cleanup-binaries
     cmds:
       - go build -o {{.BIN_DIR}}/agent ./agent/cmd
+      - go build -o {{.BIN_DIR}}/sso ./sso/cmd
+
+  run-agent:
+    desc: "Запуск сервиса агентов(agent)"
+    deps:
+      - build
+    cmds:
+      - ./{{.BIN_DIR}}/agent
+
+  run-sso:
+    desc: "Запуск сервиса авторизации(sso)"
+    deps:
+      - build
+    cmds:
+      - ./{{.BIN_DIR}}/sso
 
   run:
     desc: "Запускает собранное приложение"
@@ -124,3 +153,4 @@ tasks:
       - build
     cmds:
       - ./{{.BIN_DIR}}/agent
+      - ./{{.BIN_DIR}}/sso
