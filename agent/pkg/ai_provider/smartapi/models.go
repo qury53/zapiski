@@ -1,12 +1,23 @@
 package ai_provider_smartapi
 
-type ChatRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	Stream   bool      `json:"stream"`
+import "github.com/qury53/GC_learn/agent/internal/domain"
+
+type ChatRequestDto struct {
+	Dto      string       `json:"model"`
+	Messages []MessageDto `json:"messages"`
+	Stream   bool         `json:"stream"`
 }
 
-type Message struct {
+type MessageDto struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
+
+type ChatResponseDto struct{}
+
+func domainReqToDto(domain.ChatRequest) ChatRequestDto {
+	//some convertion
+	return ChatRequestDto{}
+}
+
+func dtoResponseToDomain(dto ChatResponseDto) domain.ChatResponse
