@@ -16,7 +16,8 @@ import (
 
 	agent_service "github.com/qury53/GC_learn/agent/internal/service"
 	agent_transport "github.com/qury53/GC_learn/agent/internal/transport"
-	ai_provider_gc "github.com/qury53/GC_learn/agent/pkg/ai_provider/gigachat"
+	ai_provider_smartapi "github.com/qury53/GC_learn/agent/pkg/ai_provider/smartapi"
+	"github.com/qury53/GC_learn/platform/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -37,14 +38,17 @@ func main() {
 		slog.Error("failed to create lis", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	log.Printf("2")
+
 	s := grpc.NewServer()
-	config := ai_provider_gc.NewConfigMust()
-	fmt.Println(*config)
-	provider := ai_provider_gc.NewGCProvider(config)
+	//config := ai_provider_gc.NewConfigMust()
+	loggerConfig := logger.NewConfigMust()
+	logger := logger.New(loggerConfig, "agent")
+	config := ai_provider_smartapi.NewConfigMust()
+	//deprecated gc provider
+	//provider := ai_provider_gc.NewGCProvider(config)
+	provider := ai_provider_smartapi.NewSmartAPIProvider(config, logger)
 	service := agent_service.NewAgentService(provider)
 	transport := agent_transport.NewAgentTransport(service)
-	log.Printf("3")
 	v1.RegisterAgentServiceServer(s, transport)
 	reflection.Register(s)
 

@@ -26,9 +26,9 @@ func NewEncryptor(config *Config) *Encryptor {
 //
 // Returns: хэш пароля
 func (e *Encryptor) GeneratePasswordHash(val string) (string, error) {
-	hashedVal, err := bcrypt.GenerateFromPassword([]byte(val), 8)
+	hashedVal, err := bcrypt.GenerateFromPassword([]byte(val), 10)
 	if err != nil {
-		return "", fmt.Errorf("hash error")
+		return "", fmt.Errorf("hash error: %w", err)
 	}
 
 	return string(hashedVal), nil

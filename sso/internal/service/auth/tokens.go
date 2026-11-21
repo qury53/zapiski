@@ -10,19 +10,15 @@ import (
 )
 
 const (
-	Issuer           = "zapiski"
+	Issuer           = "sso-zapiski"
 	TokenTypeAccess  = "access"
 	TokenTypeRefresh = "refresh"
 )
 
 // Claims данные, которые хранятся в jwt токене, нужны в основном для фронта
 type Claims struct {
-	UserID int64
-	jwt.RegisteredClaims
-}
-
-type RefreshTokenClaims struct {
-	UserID int64
+	UserID    int64  `json:"user_id"`
+	TokenType string `json:"typ"`
 	jwt.RegisteredClaims
 }
 
@@ -40,7 +36,8 @@ func (s *AuthService) GetRefreshTokenTTL() time.Duration {
 
 func (s *AuthService) GenerateAccessToken(userID int64) (string, error) {
 	claims := Claims{
-		UserID: userID,
+		UserID:    userID,
+		TokenType: TokenTypeAccess,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -51,7 +48,7 @@ func (s *AuthService) GenerateAccessToken(userID int64) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString(s.JWTSecret)
+	tokenStr, err := token.SignedString(s.jwtSecret)
 	if err != nil {
 		return "", fmt.Errorf(
 			"failed to create access token: %w",
@@ -67,8 +64,9 @@ func (s *AuthService) GenerateAccessToken(userID int64) (string, error) {
 // Returns: string, error
 
 func (s *AuthService) GenerateRefreshToken(userID int64, jti string) (string, error) {
-	claims := RefreshTokenClaims{
-		UserID: userID,
+	claims := Claims{
+		UserID:    userID,
+		TokenType: TokenTypeRefresh,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.RefreshTokenTTL)),
@@ -80,7 +78,7 @@ func (s *AuthService) GenerateRefreshToken(userID int64, jti string) (string, er
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString(s.JWTSecret)
+	tokenStr, err := token.SignedString(s.jwtSecret)
 	if err != nil {
 		return "", fmt.Errorf(
 			"failed to generate refresh token: %w",
@@ -101,18 +99,26 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 
-		return s.JWTSecret, nil
-	})
+		return s.jwtSecret, nil
+	},
+		jwt.WithIssuer(Issuer), // Проверка iss
+		jwt.WithValidMethods([]string{"HS256"}),
+	)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", core_errors.ErrUnauthorized, err)
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("%w: invalid token", core_errors.ErrUnauthorized)
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	if claims.TokenType != TokenTypeAccess {
+		return nil, fmt.Errorf("%w: invalid token type", core_errors.ErrUnauthorized)
+	}
+
+	return claims, nil
 }
 
 // ValidateRefreshToken валидирует refresh токен.
@@ -121,15 +127,18 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 //
 // Returns: claims, признак валидности, ошибку
 
-func (s *AuthService) ValidateRefreshToken(tokenStr string) (RefreshTokenClaims, bool, error) {
-	claims := &RefreshTokenClaims{}
+func (s *AuthService) ValidateRefreshToken(tokenStr string) (Claims, bool, error) {
+	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return s.JWTSecret, nil
-	})
+		return s.jwtSecret, nil
+	},
+		jwt.WithIssuer(Issuer),
+		jwt.WithValidMethods([]string{"HS256"}),
+	)
 
 	if err != nil {
 		// Истёкший токен возвращаем вместе с claims: по jti вызывающий код
@@ -138,36 +147,47 @@ func (s *AuthService) ValidateRefreshToken(tokenStr string) (RefreshTokenClaims,
 			return *claims, false, core_errors.ErrTokenExpired
 		}
 
-		return RefreshTokenClaims{}, false, fmt.Errorf("failed to parse jwt: %w", err)
+		return Claims{}, false, fmt.Errorf("%w: %w", core_errors.ErrUnauthorized, err)
 	}
 
-	if claims, ok := token.Claims.(*RefreshTokenClaims); ok && token.Valid {
-		return *claims, true, nil
+	if !token.Valid {
+		return Claims{}, false, fmt.Errorf("%w: invalid token", core_errors.ErrUnauthorized)
 	}
 
-	return RefreshTokenClaims{}, false, nil
+	if claims.TokenType != TokenTypeRefresh {
+		return Claims{}, false, fmt.Errorf("%w: invalid token type", core_errors.ErrUnauthorized)
+	}
+
+	return *claims, true, nil
 }
 
 // ParseRefreshToken парсит RefreshTokenClaims из refresh токена
 func (s *AuthService) ParseRefreshToken(
 	tokenString string,
-) (RefreshTokenClaims, error) {
-	claims := RefreshTokenClaims{}
+) (Claims, error) {
+	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return s.JWTSecret, nil
-	})
+		return s.jwtSecret, nil
+	},
+		jwt.WithIssuer(Issuer), // Проверка iss
+		jwt.WithValidMethods([]string{"HS256"}),
+	)
 
 	if err != nil {
-		return RefreshTokenClaims{}, err
+		return Claims{}, fmt.Errorf("%w: %w", core_errors.ErrUnauthorized, err)
 	}
 
-	if claims, ok := token.Claims.(RefreshTokenClaims); ok && token.Valid {
-		return claims, nil
+	if !token.Valid {
+		return Claims{}, fmt.Errorf("%w: invalid token", core_errors.ErrUnauthorized)
 	}
 
-	return RefreshTokenClaims{}, fmt.Errorf("invalid token: %w %v", core_errors.ErrUnauthorized, err)
+	if claims.TokenType != TokenTypeRefresh {
+		return Claims{}, fmt.Errorf("%w: invalid token type", core_errors.ErrUnauthorized)
+	}
+
+	return *claims, nil
 }

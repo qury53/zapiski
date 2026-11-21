@@ -36,6 +36,10 @@ func NewPool(
 		return nil, fmt.Errorf("create pgx pool: %w", err)
 	}
 
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("ping failed: %w", err)
+	}
+
 	return &Pool{
 		Pool:    pool,
 		timeout: config.Timeout,

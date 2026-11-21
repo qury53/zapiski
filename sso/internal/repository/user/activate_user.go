@@ -16,7 +16,7 @@ func (r *UserRepository) ActivateUser(
 	SET state = 'active',
 		updated_at = now(),
 		version = version+1
-	WHERE email = $1;
+	WHERE email = $1 AND state = 'pending_verification';
 	`
 
 	cmdTag, err := r.pool.Exec(ctx, query, email)

@@ -10,7 +10,8 @@ import (
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 )
 
-// GetUserByEmail возвращает пользователя по email без учета регистра.
+// GetUserByEmail возвращает пользователя по email. Сравнение точное:
+// email в БД хранится нормализованным (lower+trim) при регистрации и в OAuth.
 //
 // Returns: domain.User, error
 
@@ -21,7 +22,7 @@ func (r *UserRepository) GetUserByEmail(
 	const query = `
 		SELECT id, version, username, password, email, state, created_at, updated_at
 		FROM zapiski.users
-		WHERE lower(email) = lower($1)
+		WHERE email = $1
 	`
 
 	return r.getUser(ctx, query, email)
