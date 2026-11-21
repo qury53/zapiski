@@ -24,9 +24,11 @@ func (s *AuthService) VerifyEmail(
 	email string,
 	code string,
 ) (domain.VerificationStatus, error) {
+	email = normalizeEmail(email)
+
 	res, err := verifyEmailScript.Run(ctx, s.cacheClient,
 		[]string{s.verificationCacheKey(email), s.verificationCodeAttemptsCacheKey(email)},
-		code,
+		s.encryptor.HashToken(code),
 		maxAttempts,
 		verificationCodeTTL.Milliseconds(),
 	).Int64()

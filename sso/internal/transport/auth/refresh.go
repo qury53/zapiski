@@ -28,7 +28,7 @@ func (t *AuthTransport) Refresh(
 		return nil, status.Error(codes.Unauthenticated, "refresh token required")
 	}
 
-	refresh, access, err := t.service.Refresh(ctx, refreshToken)
+	access, refresh, err := t.service.Refresh(ctx, refreshToken)
 	if err != nil {
 		t.log.Warn("refresh failed", slog.Any("error", err))
 		clearRefreshCookie(ctx, t.log)

@@ -21,7 +21,7 @@ type AuthService struct {
 	encryptor         Encryptor
 	smtp              Smtp
 	cacheClient       CacheClient
-	JWTSecret         []byte
+	jwtSecret         []byte
 	AccessTokenTTL    time.Duration
 	RefreshTokenTTL   time.Duration
 }
@@ -57,6 +57,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int64) (domain.User, error)
 	CreateOAuthUser(ctx context.Context, username string, email string) (domain.User, error)
 	ActivateUser(ctx context.Context, email string) error
+	DeletePendingUser(ctx context.Context, userID int64) error
 }
 
 type CacheClient interface {
@@ -105,7 +106,7 @@ func NewAuthService(
 		encryptor:         encryptor,
 		smtp:              smtp,
 		cacheClient:       cacheClient,
-		JWTSecret:         []byte(config.JWTSecret),
+		jwtSecret:         []byte(config.JWTSecret),
 		AccessTokenTTL:    config.AccessTokenTTL,
 		RefreshTokenTTL:   config.RefreshTokenTTL,
 	}
