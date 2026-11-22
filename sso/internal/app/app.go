@@ -29,6 +29,7 @@ import (
 	auth_service "github.com/qury53/GC_learn/sso/internal/service/auth"
 	auth_transport "github.com/qury53/GC_learn/sso/internal/transport/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const (
@@ -137,6 +138,7 @@ func New(
 
 	ssov1.RegisterAuthServiceServer(grpcServer, authTransport)
 	srvMetrics.InitializeMetrics(grpcServer)
+	reflection.Register(grpcServer)
 	app.grpcServer = grpcServer
 
 	return app, nil

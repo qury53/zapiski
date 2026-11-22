@@ -107,8 +107,6 @@ tasks:
 
   docker-obs-up:
     desc: "Поднимает сервисы сбора логов и метрик"
-    deps:
-      - docker-net-init
     cmds:
       - docker compose -f observability/docker-compose.obs.yml up -d
 
