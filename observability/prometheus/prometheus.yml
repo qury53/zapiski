@@ -9,3 +9,11 @@ scrape_configs:
   - job_name: 'alloy'
     static_configs:
       - targets: ['alloy:12345']  # Alloy отдаёт свои метрики на этом порту
+  
+  - job_name: 'sso'
+    static_configs:
+      - targets: ['zapiski-sso:9091']
+    
+  - job_name: 'agent'
+    static_configs:
+      - targets: ['zapiski-agent:9092']
