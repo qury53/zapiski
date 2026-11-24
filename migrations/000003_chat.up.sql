@@ -13,6 +13,7 @@ FOR EACH ROW EXECUTE FUNCTION zapiski.touch_chat();
 
 CREATE TABLE zapiski.chats (
     id BIGSERIAL PRIMARY KEY,
+    version BIGINT NOT NULL DEFAULT 1,
     user_id BIGINT NOT NULL 
         REFERENCES zapiski.users(id)
         ON DELETE CASCADE,

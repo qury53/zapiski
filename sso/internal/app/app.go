@@ -131,6 +131,7 @@ func New(
 
 	authTransport := auth_transport.NewAuthTransport(log, authService, authService)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		interceptor.TimeoutUnaryInterceptor(15*time.Second),
 		interceptor.RecoveryInterceptor(log),
 		srvMetrics.UnaryServerInterceptor(),
 		interceptor.LoggingUnaryInterceptor(log, serviceName),

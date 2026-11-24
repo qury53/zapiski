@@ -79,6 +79,7 @@ func New(
 
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			interceptor.TimeoutUnaryInterceptor(30*time.Second),
 			interceptor.RecoveryInterceptor(log),
 			srvMetrics.UnaryServerInterceptor(),
 			interceptor.LoggingUnaryInterceptor(log, serviceName),
