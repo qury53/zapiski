@@ -9,23 +9,56 @@ env:
   PROJECT_ROOT: '{{.ROOT_DIR}}'
 
 vars:
-  APP_NAME: "GC_agent"
+  APP_NAME: "GC_learn"
   BIN_DIR: "bin"
   BUF_VERSION: "1.75.0"
   PROTOC_GEN_GO_VERSION: "1.36.12"
   PROTOC_GEN_GO_VERSION_GRPC: "1.6.2"
-  PROTO_DIR: "/shared/proto"
+  PROTO_DIR: "shared/proto"
 
   POSTGRES_URL: "postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable"
 
 tasks:
-  migrate-force-0:
-    desc: "Сбрасывает dirty-состояние миграций на версию 0"
+  docker-up-infra:
+    desc: "Поднимает инфраструктуру (postgres, redis, mailhog)"
     cmds:
-      - docker compose run --rm zapiski-postgres-migrate
-        -path=/migrations
-        -database=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable
-        force 0
+      - docker compose up -d zapiski-postgres zapiski-redis mailhog
+
+  docker-up-app:
+    desc: "Поднимает gateway+SSO и зависимости в Docker Compose"
+    cmds:
+      - docker compose up -d --build
+
+  docker-up:
+<<<<<<< Updated upstream
+    desc: "Поднимает все докер контейнеры"
+=======
+    desc: "Поднимает все докер контейнеры (включая observability)"
+    deps:
+      - docker-obs-up
+>>>>>>> Stashed changes
+    cmds:
+      - docker compose up -d --build
+
+  docker-down:
+    desc: "Останавливает все докер контейнеры"
+<<<<<<< Updated upstream
+=======
+    cmds:
+      - docker compose down
+
+  docker-down-all:
+    desc: "Останавливает приложение и observability"
+    deps:
+      - docker-obs-down
+>>>>>>> Stashed changes
+    cmds:
+      - docker compose down
+
+  docker-logs:
+    desc: "Логи gateway+SSO"
+    cmds:
+      - docker compose logs -f --tail=100 sso api
 
   migrate-create:
     desc: "Создаёт новую миграцию: task migrate-create name=create_users"
@@ -35,7 +68,7 @@ tasks:
       vars:
         - name
     cmds:
-      - docker compose run --rm zapiski-postgres-migrate
+      - docker compose run --rm --no-deps zapiski-postgres-migrate
         create
         -ext=sql
         -dir=/migrations
@@ -43,35 +76,31 @@ tasks:
         "{{.NAME}}"
 
   migrate-up:
-    deps:
-      - docker-up
     desc: "Применяет миграции"
-    vars:
-      LEVEL: '{{.LEVEL}}'
+    deps:
+      - docker-up-infra
     cmds:
       - docker compose run --rm zapiski-postgres-migrate
         -path=/migrations
-        -database=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable
+        -database={{.POSTGRES_URL}}
         up
         {{.CLI_ARGS}}
 
   migrate-down:
-    deps:
-      - docker-up
     desc: "Откатывает миграции"
-    vars:
-      LEVEL: '{{.LEVEL}}'
+    deps:
+      - docker-up-infra
     cmds:
       - docker compose run --rm zapiski-postgres-migrate
         -path=/migrations
-        -database=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable
+        -database={{.POSTGRES_URL}}
         down
-        {{.CLI_ARGS}} 
+        {{.CLI_ARGS}}
 
   migrate-force:
+    desc: "Сбрасывает dirty-состояние на указанную версию: task migrate-force v=1"
     deps:
-      - docker-up
-    desc: "Сбрасывает dirty-состояние на указанную версию: task migrate-force v=16"
+      - docker-up-infra
     requires:
       vars:
         - v
@@ -81,15 +110,15 @@ tasks:
         -database={{.POSTGRES_URL}}
         force {{.v}}
 
-  docker-up:
-    desc: "Поднимает все докер контейнеры"
+  migrate-force-0:
+    desc: "Сбрасывает dirty-состояние миграций на версию 0"
+    deps:
+      - docker-up-infra
     cmds:
-      - docker compose up -d
-
-  docker-down:
-    desc: "Останавливает все докер контейнеры"
-    cmds:
-      - docker compose down
+      - docker compose run --rm zapiski-postgres-migrate
+        -path=/migrations
+        -database={{.POSTGRES_URL}}
+        force 0
 
   install-deps:
     desc: "Устанавливает зависимости, в основном плагины для gRPC"
@@ -109,18 +138,62 @@ tasks:
   cleanup-binaries:
     desc: "Чистит бинарники сервисов перед запуском"
     cmds:
-      - rm -f {{.BIN_DIR}}/agent
+      - rm -f {{.BIN_DIR}}/agent {{.BIN_DIR}}/sso {{.BIN_DIR}}/api
 
   build:
-    desc: "Сборка приложения"
+    desc: "Сборка всех сервисов"
     deps:
       - cleanup-binaries
     cmds:
       - go build -o {{.BIN_DIR}}/agent ./agent/cmd
+<<<<<<< Updated upstream
+=======
+      - go build -o {{.BIN_DIR}}/sso ./sso/cmd
+      - go build -o {{.BIN_DIR}}/api ./api/cmd
 
-  run:
-    desc: "Запускает собранное приложение"
+  build-api:
+    desc: "Сборка только API gateway"
+    cmds:
+      - go build -o {{.BIN_DIR}}/api ./api/cmd
+
+  build-sso:
+    desc: "Сборка только SSO"
+    cmds:
+      - go build -o {{.BIN_DIR}}/sso ./sso/cmd
+
+  run-agent:
+    desc: "Запуск сервиса агентов (agent)"
     deps:
       - build
     cmds:
       - ./{{.BIN_DIR}}/agent
+
+  run-sso:
+    desc: "Запуск сервиса авторизации (sso)"
+    deps:
+      - build
+    cmds:
+      - ./{{.BIN_DIR}}/sso
+>>>>>>> Stashed changes
+
+  run-api:
+    desc: "Запуск API gateway"
+    deps:
+      - build
+    cmds:
+<<<<<<< Updated upstream
+      - ./{{.BIN_DIR}}/agent
+=======
+      - ./{{.BIN_DIR}}/api
+
+  run:
+    desc: "Запускает собранные сервисы локально (api,sso,agent)"
+    deps:
+      - build
+    cmds:
+      - |
+        ./{{.BIN_DIR}}/api &
+        ./{{.BIN_DIR}}/sso &
+        ./{{.BIN_DIR}}/agent &
+        wait
+>>>>>>> Stashed changes

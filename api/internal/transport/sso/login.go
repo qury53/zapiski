@@ -3,10 +3,11 @@ package sso
 import (
 	"encoding/json"
 	"net/http"
-	ssov1 "shared/pkg/proto/sso/v1"
 
+	core_cookie "github.com/qury53/GC_learn/api/internal/core/http/cookie"
+	metadata_carrier "github.com/qury53/GC_learn/api/internal/core/http/metadata"
 	core_http_response "github.com/qury53/GC_learn/api/internal/core/http/responce"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
+	"google.golang.org/grpc/metadata"
 )
 
 type LoginRequest struct {
@@ -14,11 +15,16 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (t *SSOTransport) Login(w http.ResponseWriter, r *http.Request) {
+type LoginResponse struct {
+	AccessToken string `json:"access_token"`
+	UserID      int64  `json:"user_id"`
+}
+
+func (t *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 
 	ctx := r.Context()
-	log := core_logger.FromContext(ctx)
+	log := t.log
 	responseWriter := core_http_response.NewHTTPResponseHandler(log, w)
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -26,14 +32,20 @@ func (t *SSOTransport) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := t.ssov1.Login(ctx, &ssov1.LoginRequest{
-		Username: req.Username,
-		Password: req.Password,
-	})
+	headerMD := metadata.MD{}
+	headers := metadata_carrier.NewGRPCCarrier(&headerMD)
+	ctx = core_cookie.WithForwardedMetadata(r)
+
+	resp, err := t.service.Login(ctx, req, headers)
 	if err != nil {
 		responseWriter.ErrorResponse(err, "failed to login")
 		return
 	}
 
-	responseWriter.JSONResponse(resp, http.StatusOK)
+	core_cookie.WriteSetCookiesFromMetadata(w, headerMD)
+
+	responseWriter.JSONResponse(LoginResponse{
+		AccessToken: resp.AccessToken,
+		UserID:      resp.UserID,
+	}, http.StatusOK)
 }

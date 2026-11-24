@@ -1,44 +1,31 @@
 package sso
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	ssov1 "shared/pkg/proto/sso/v1"
 
+	core_cookie "github.com/qury53/GC_learn/api/internal/core/http/cookie"
+	metadata_carrier "github.com/qury53/GC_learn/api/internal/core/http/metadata"
 	core_http_response "github.com/qury53/GC_learn/api/internal/core/http/responce"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
+	"google.golang.org/grpc/metadata"
 )
 
-type RefreshRequest struct {
-	RefreshToken string
-}
-
-func (t *SSOTransport) Refresh(w http.ResponseWriter, r *http.Request) {
-	var req RefreshRequest
-
+func (t *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := core_logger.FromContext(ctx)
+	log := t.log
 	responseWriter := core_http_response.NewHTTPResponseHandler(log, w)
-	cookie, err := r.Cookie("refresh_token")
-	if err != nil {
-		responseWriter.ErrorResponse(err, "refresh_token required")
-		return
-	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		responseWriter.ErrorResponse(err, "invalid body")
-		return
-	}
+	ctx = core_cookie.WithForwardedMetadata(r)
 
-	resp, err := t.ssov1.Refresh(ctx, &ssov1.RefreshRequest{
-		RefreshToken: fmt.Sprintf("%s", cookie.Value),
-	})
-
+	headerMD := metadata.MD{}
+	headers := metadata_carrier.NewGRPCCarrier(&headerMD)
+	token := extractRefreshFromCookie(ctx)
+	resp, err := t.service.Refresh(ctx, token, headers)
 	if err != nil {
 		responseWriter.ErrorResponse(err, "failed to refresh")
 		return
 	}
+
+	core_cookie.WriteSetCookiesFromMetadata(w, headerMD)
 
 	responseWriter.JSONResponse(resp, http.StatusOK)
 }

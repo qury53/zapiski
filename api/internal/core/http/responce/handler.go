@@ -1,77 +1,76 @@
 package core_http_response
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	core_errors "github.com/qury53/GC_learn/api/internal/core/errors"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
-	"go.uber.org/zap"
+	"github.com/qury53/GC_learn/platform/logger"
 )
 
 type HTTPResponseHandler struct {
-	log *core_logger.Logger
+	log *logger.Logger
 	rw  http.ResponseWriter
 }
 
-func NewHTTPResponseHandler(log *core_logger.Logger, rw http.ResponseWriter) *HTTPResponseHandler {
-	return &HTTPResponseHandler{
-		log: log,
-		rw:  rw,
-	}
+func NewHTTPResponseHandler(log *logger.Logger, rw http.ResponseWriter) *HTTPResponseHandler {
+	return &HTTPResponseHandler{log: log, rw: rw}
 }
 
 func (h *HTTPResponseHandler) JSONResponse(responseBody any, statusCode int) {
+	h.rw.Header().Set("Content-Type", "application/json")
 	h.rw.WriteHeader(statusCode)
-	if err := json.NewEncoder(h.rw).Encode(&responseBody); err != nil {
-		h.log.Error("write HTTP response", zap.Error(err))
+	if err := json.NewEncoder(h.rw).Encode(&responseBody); err != nil && h.log != nil {
+		h.log.Error("write HTTP response", slog.Any("error", err))
 	}
 }
 
 func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
 	statusCode := http.StatusInternalServerError
 	err := fmt.Errorf("unexpected panic: %v", p)
-	h.log.Error(msg, zap.Error(err))
+	if h.log != nil {
+		h.log.Error(msg, slog.Any("error", err))
+	}
 	h.errorResponse(statusCode, err, msg)
 }
+
 func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
-	var (
-		statusCode int
-		logFunc    func(string, ...zap.Field)
-	)
+	var statusCode int
+	level := slog.LevelError
 
 	switch {
 	case errors.Is(err, core_errors.ErrInvalidArgument):
 		statusCode = http.StatusBadRequest
-		logFunc = h.log.Warn
-
+		level = slog.LevelWarn
 	case errors.Is(err, core_errors.ErrNotFound):
 		statusCode = http.StatusNotFound
-		logFunc = h.log.Debug
-
+		level = slog.LevelDebug
 	case errors.Is(err, core_errors.ErrConflict):
 		statusCode = http.StatusConflict
-		logFunc = h.log.Warn
-
+		level = slog.LevelWarn
 	default:
 		statusCode = http.StatusInternalServerError
-		logFunc = h.log.Error
 	}
 
-	logFunc(msg, zap.Error(err))
+	if h.log != nil {
+		attrs := []any{slog.Any("error", err)}
+		h.log.Log(contextBackground(), level, msg, attrs...)
+	}
 	h.errorResponse(statusCode, err, msg)
 }
 
+func contextBackground() context.Context { return context.Background() }
+
 func (h *HTTPResponseHandler) errorResponse(statusCode int, err error, msg string) {
+	h.rw.Header().Set("Content-Type", "application/json")
 	h.rw.WriteHeader(statusCode)
-
-	response := map[string]string{
-		"message": msg,
-		"error":   err.Error(),
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
 	}
-
-	h.JSONResponse(response, statusCode)
-
+	_ = json.NewEncoder(h.rw).Encode(map[string]string{"message": msg, "error": errMsg})
 }

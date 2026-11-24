@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Level  string `envconfig:"LEVEL" default:"DEBUG"`
-	Folder string `envconfig:"FOLDER" required:"true"`
+	Folder string `envconfig:"FOLDER" default:"/tmp/opencode/api-logs"`
 }
 
 func NewConfig() (Config, error) {

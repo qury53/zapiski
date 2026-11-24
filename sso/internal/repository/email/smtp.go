@@ -12,8 +12,13 @@ type SmtpRepository struct {
 }
 
 func NewSmtpRepository(config *Config) *SmtpRepository {
+	var auth smtp.Auth
+	if config.Username != "" || config.Password != "" {
+		auth = smtp.PlainAuth("", config.Username, config.Password, config.Host)
+	}
+
 	return &SmtpRepository{
-		auth:     smtp.PlainAuth("", config.Username, config.Password, config.Host),
+		auth:     auth,
 		host:     config.Host,
 		addr:     config.Host + ":" + config.Port,
 		fromText: config.SenderEmail,
