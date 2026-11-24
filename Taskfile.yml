@@ -19,6 +19,11 @@ vars:
   POSTGRES_URL: "postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable"
 
 tasks:
+  docker-net-init:
+    desc: "Создает docker сеть zapiski-net"
+    cmds:
+      - docker network create zapiski-net
+
   migrate-force-0:
     desc: "Сбрасывает dirty-состояние миграций на версию 0"
     cmds:
@@ -80,6 +85,18 @@ tasks:
         -path=/migrations
         -database={{.POSTGRES_URL}}
         force {{.v}}
+
+  docker-build:
+    desc: "Собирает образы sso и agent"
+    cmds:
+      - docker compose build zapiski-sso zapiski-agent
+
+  docker-up-build:
+    desc: "Поднимает инфраструктуру и сервисы с пересборкой"
+    deps:
+      - docker-obs-up
+    cmds:
+      - docker compose up -d --build
 
   docker-up:
     desc: "Поднимает все докер контейнеры"

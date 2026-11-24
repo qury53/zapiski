@@ -6,10 +6,16 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	ssov1 "shared/pkg/proto/sso/v1"
 	"time"
 
+	grpcProm "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/qury53/GC_learn/platform/interceptor"
 	"github.com/qury53/GC_learn/platform/logger"
+	prometheus_metrics "github.com/qury53/GC_learn/platform/metrics"
 	pgx_pool "github.com/qury53/GC_learn/platform/postgres"
 	"github.com/qury53/GC_learn/platform/redis"
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
@@ -23,14 +29,21 @@ import (
 	auth_service "github.com/qury53/GC_learn/sso/internal/service/auth"
 	auth_transport "github.com/qury53/GC_learn/sso/internal/transport/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+const (
+	serviceName = "sso"
 )
 
 type App struct {
-	log          *logger.Logger
-	grpcServer   *grpc.Server
-	shutdownTime time.Duration
-	port         string
-	closers      []func()
+	log             *logger.Logger
+	grpcServer      *grpc.Server
+	metricsServer   *http.Server
+	metricsRegistry *prometheus.Registry
+	shutdownTime    time.Duration
+	port            string
+	closers         []func()
 }
 
 func New(
@@ -96,10 +109,36 @@ func New(
 		oauthClients,
 	)
 
+	srvMetrics := grpcProm.NewServerMetrics(
+		grpcProm.WithServerHandlingTimeHistogram(),
+	)
+
+	reg := prometheus_metrics.NewRegistry()
+	reg.MustRegister(srvMetrics)
+
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+	mux.HandleFunc("/healthy", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthy"))
+	})
+
+	app.metricsServer = &http.Server{
+		Addr:              net.JoinHostPort("", config.MetricsPort),
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
 	authTransport := auth_transport.NewAuthTransport(log, authService, authService)
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		interceptor.RecoveryInterceptor(log),
+		srvMetrics.UnaryServerInterceptor(),
+		interceptor.LoggingUnaryInterceptor(log, serviceName),
+	))
 
 	ssov1.RegisterAuthServiceServer(grpcServer, authTransport)
+	srvMetrics.InitializeMetrics(grpcServer)
+	reflection.Register(grpcServer)
 	app.grpcServer = grpcServer
 
 	return app, nil
@@ -130,6 +169,17 @@ func (a *App) Run(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
+		if err := a.metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			a.log.Error(
+				"metrics server error",
+				slog.Any("error", err),
+			)
+
+			errChan <- err
+		}
+	}()
+
+	go func() {
 		a.log.Info("sso запущен", slog.String("port", a.port))
 		if err := a.grpcServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			errChan <- err
@@ -145,6 +195,7 @@ func (a *App) Run(ctx context.Context) error {
 		closed := make(chan struct{})
 
 		go func() {
+			_ = a.metricsServer.Shutdown(ctx)
 			a.grpcServer.GracefulStop()
 			close(closed)
 		}()
