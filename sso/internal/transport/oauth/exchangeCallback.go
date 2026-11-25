@@ -58,7 +58,6 @@ func (t *OAuthTransport) HandleOAuthCallback(
 		getClientIP(ctx),
 	)
 	if err != nil {
-		// code, state и verifier в логи не попадают.
 		t.logOAuthError("oauth callback failed", provider, err)
 
 		return nil, status.Error(

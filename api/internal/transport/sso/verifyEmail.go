@@ -3,10 +3,11 @@ package sso
 import (
 	"encoding/json"
 	"net/http"
-	ssov1 "shared/pkg/proto/sso/v1"
 
+	core_cookie "github.com/qury53/GC_learn/api/internal/core/http/cookie"
+	metadata_carrier "github.com/qury53/GC_learn/api/internal/core/http/metadata"
 	core_http_response "github.com/qury53/GC_learn/api/internal/core/http/responce"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
+	"google.golang.org/grpc/metadata"
 )
 
 type VerifyEmailRequest struct {
@@ -14,11 +15,23 @@ type VerifyEmailRequest struct {
 	Code  string `json:"code"`
 }
 
-func (t *SSOTransport) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+type AuthStatus string
+
+const (
+	AuthStatusActive              AuthStatus = "AUTH_STATUS_ACTIVE"
+	AuthStatusPendingVerification AuthStatus = "AUTH_STATUS_PENDING_VERIFICATION"
+	AuthStatusBlocked             AuthStatus = "AUTH_STATUS_BLOCKED"
+)
+
+type VerifyEmailResponse struct {
+	Status AuthStatus `json:"status"`
+}
+
+func (t *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	var req VerifyEmailRequest
 
 	ctx := r.Context()
-	log := core_logger.FromContext(ctx)
+	log := t.log
 	responseWriter := core_http_response.NewHTTPResponseHandler(log, w)
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -26,14 +39,16 @@ func (t *SSOTransport) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := t.ssov1.VerifyEmail(ctx, &ssov1.VerifyEmailRequest{
-		Email: req.Email,
-		Code:  req.Code,
-	})
+	ctx = core_cookie.WithForwardedMetadata(r)
+	headerMD := metadata.MD{}
+	headers := metadata_carrier.NewGRPCCarrier(&headerMD)
+
+	resp, err := t.service.VerifyEmail(ctx, req, headers)
 	if err != nil {
 		responseWriter.ErrorResponse(err, "failed to verify email")
 		return
 	}
 
+	core_cookie.WriteSetCookiesFromMetadata(w, headerMD)
 	responseWriter.JSONResponse(resp, http.StatusOK)
 }

@@ -3,10 +3,9 @@ package sso
 import (
 	"encoding/json"
 	"net/http"
-	ssov1 "shared/pkg/proto/sso/v1"
 
 	core_http_response "github.com/qury53/GC_learn/api/internal/core/http/responce"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
+	"github.com/qury53/GC_learn/api/internal/core/ports"
 )
 
 type RegisterRequest struct {
@@ -15,11 +14,16 @@ type RegisterRequest struct {
 	Email    string `json:"email"`
 }
 
-func (t *SSOTransport) Register(w http.ResponseWriter, r *http.Request) {
+type RegisterResponse struct {
+	UserID int64  `json:"user_id"`
+	Status string `json:"status"`
+}
+
+func (t *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 
 	ctx := r.Context()
-	log := core_logger.FromContext(ctx)
+	log := t.log
 	responseWriter := core_http_response.NewHTTPResponseHandler(log, w)
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -27,15 +31,22 @@ func (t *SSOTransport) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := t.ssov1.Register(ctx, &ssov1.RegisterRequest{
-		Username: req.Username,
-		Password: req.Password,
-		Email:    req.Email,
-	})
+	resp, err := t.service.Register(ctx, req)
 	if err != nil {
 		responseWriter.ErrorResponse(err, "failed to register user")
 		return
 	}
 
-	responseWriter.JSONResponse(resp, http.StatusOK)
+	responseWriter.JSONResponse(RegisterResponse{
+		UserID: resp.UserID,
+		Status: string(resp.Status),
+	}, http.StatusOK)
+}
+
+func toPortRegisterRequest(req RegisterRequest) ports.RegisterRequest {
+	return ports.RegisterRequest{Username: req.Username, Password: req.Password, Email: req.Email}
+}
+
+func fromPortRegisterResponse(resp ports.RegisterResponse) RegisterResponse {
+	return RegisterResponse{UserID: resp.UserID, Status: string(resp.Status)}
 }

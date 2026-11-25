@@ -4,6 +4,7 @@ go 1.26.9
 
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/kelseyhightower/envconfig v1.4.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.85.0
 )

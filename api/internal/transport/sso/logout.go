@@ -1,40 +1,29 @@
 package sso
 
 import (
-	"encoding/json"
 	"net/http"
-	ssov1 "shared/pkg/proto/sso/v1"
 
+	core_cookie "github.com/qury53/GC_learn/api/internal/core/http/cookie"
+	metadata_carrier "github.com/qury53/GC_learn/api/internal/core/http/metadata"
 	core_http_response "github.com/qury53/GC_learn/api/internal/core/http/responce"
-	core_logger "github.com/qury53/GC_learn/api/internal/core/logger"
+	"google.golang.org/grpc/metadata"
 )
 
-type LogoutRequest struct {
-	RefreshToken string
-}
-
-func (t *SSOTransport) Logout(w http.ResponseWriter, r *http.Request) {
-	var req LogoutRequest
-
+func (t *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := core_logger.FromContext(ctx)
+	log := t.log
+	rw := core_http_response.NewHTTPResponseHandler(log, w)
 
-	// TODO: ЕСЛИ ЧТО ПРИДЕЛАТЬ ПАРСЕР КУКИ ПО refresh_token
-	responseWriter := core_http_response.NewHTTPResponseHandler(log, w)
+	ctx = core_cookie.WithForwardedMetadata(r)
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		responseWriter.ErrorResponse(err, "invalid body")
+	headerMD := metadata.MD{}
+	headers := metadata_carrier.NewGRPCCarrier(&headerMD)
+	token := extractRefreshFromCookie(ctx)
+	if err := t.service.Logout(ctx, token, headers); err != nil {
+		rw.ErrorResponse(err, "failed to logout")
 		return
 	}
 
-	resp, err := t.ssov1.Logout(ctx, &ssov1.LogoutRequest{
-		RefreshToken: req.RefreshToken,
-	})
-
-	if err != nil {
-		responseWriter.ErrorResponse(err, "failed to logout")
-		return
-	}
-
-	responseWriter.JSONResponse(resp, http.StatusOK)
+	core_cookie.WriteSetCookiesFromMetadata(w, headerMD)
+	w.WriteHeader(http.StatusNoContent)
 }
