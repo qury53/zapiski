@@ -1,26 +1,17 @@
 CREATE TYPE zapiski.chat_mode AS ENUM ('support', 'full');
-CREATE TYPE zapiski.msg_role AS ENUM ('unspecified', 'system', 'user', 'assistant', 'tool')
-
-CREATE FUNCTION zapiski.touch_chat() RETURNS trigger AS $$
-BEGIN
-    UPDATE zapiski.chats SET updated_at = now() WHERE id = NEW.chat_id;
-    RETURN NEW;
-END $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER messages_touch_chat
-AFTER INSERT OR UPDATE OR DELETE ON zapiski.messages
-FOR EACH ROW EXECUTE FUNCTION zapiski.touch_chat();
+CREATE TYPE zapiski.msg_role AS ENUM ('unspecified', 'system', 'user', 'assistant', 'tool');
 
 CREATE TABLE zapiski.chats (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL 
+    version BIGINT NOT NULL DEFAULT 1,
+    user_id BIGINT NOT NULL
         REFERENCES zapiski.users(id)
         ON DELETE CASCADE,
     mode zapiski.chat_mode NOT NULL DEFAULT 'full',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ
-)
+);
 
 CREATE TABLE zapiski.messages (
     id BIGSERIAL PRIMARY KEY,
@@ -30,9 +21,29 @@ CREATE TABLE zapiski.messages (
     role zapiski.msg_role NOT NULL,
     content TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-)
+);
 
-CREATE INDEX ON zapiski.chats (user_id, updated_at DESC)
+CREATE FUNCTION zapiski.touch_chat() RETURNS trigger AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        UPDATE zapiski.chats SET updated_at = now() WHERE id = OLD.chat_id;
+        RETURN OLD;
+    END IF;
+
+    UPDATE zapiski.chats SET updated_at = now() WHERE id = NEW.chat_id;
+    RETURN NEW;
+END $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER messages_touch_chat
+AFTER INSERT OR UPDATE OR DELETE ON zapiski.messages
+FOR EACH ROW EXECUTE FUNCTION zapiski.touch_chat();
+
+CREATE INDEX zapiski_chats_user_id_updated_at_idx
+    ON zapiski.chats (user_id, updated_at DESC)
     WHERE deleted_at IS NULL;
 
-CREATE INDEX ON zapiski.messages (chat_id, id);
+CREATE INDEX zapiski_messages_chat_id_id_idx
+    ON zapiski.messages (chat_id, id);
+
+CREATE INDEX zapiski_messages_chat_id_created_at_idx
+    ON zapiski.messages (chat_id, created_at DESC);

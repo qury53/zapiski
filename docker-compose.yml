@@ -31,10 +31,16 @@ services:
         restart: unless-stopped
         env_file:
         - .env
+        environment:
+        - POSTGRES_HOST=zapiski-postgres
+        - POSTGRES_PORT=5432
+        - AGENT_GRPC_PORT=5678
         ports:
         - "5678:5678"
         expose:
         - "9092"
+        depends_on:
+        - zapiski-postgres
 
     zapiski-postgres:
         image: postgres:18.1-bookworm

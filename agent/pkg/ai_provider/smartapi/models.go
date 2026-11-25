@@ -1,15 +1,18 @@
 package ai_provider_smartapi
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/qury53/GC_learn/agent/internal/domain"
 )
 
 type ChatRequestDto struct {
-	Dto      string       `json:"model"`
-	Messages []MessageDto `json:"messages"`
-	Stream   bool         `json:"stream"`
+	Dto         string       `json:"model"`
+	Messages    []MessageDto `json:"messages"`
+	Stream      bool         `json:"stream"`
+	MaxTokens   *int         `json:"max_tokens,omitempty"`
+	Temperature *float64     `json:"temperature,omitempty"`
 }
 
 type MessageDto struct {
@@ -48,26 +51,26 @@ func domainReqToDto(req domain.ChatRequest) ChatRequestDto {
 	}
 
 	return ChatRequestDto{
-		Dto:      req.Model, // поле с тегом `json:"model"`
-		Messages: msgs,
-		Stream:   false,
+		Dto:         req.Model, // поле с тегом `json:"model"`
+		Messages:    msgs,
+		Stream:      false,
+		MaxTokens:   req.MaxTokens,
+		Temperature: req.Temperature,
 	}
 }
 
-func dtoResponseToDomain(dto ChatResponseDto) domain.ChatResponse {
-	var content string
-	var finishReason domain.FinishReason
-
-	if len(dto.Choices) > 0 {
-		content = dto.Choices[0].Message.Content
-		finishReason = domain.FinishReason(dto.Choices[0].FinishReason)
+func dtoResponseToDomain(dto ChatResponseDto) (domain.ChatResponse, error) {
+	if len(dto.Choices) == 0 {
+		return domain.ChatResponse{}, fmt.Errorf("smartapi: response has no choices")
 	}
+
+	choice := dto.Choices[0]
 
 	return domain.ChatResponse{
 		ThreadID:     dto.ID,
 		Model:        dto.Model,
-		Content:      content,
-		FinishReason: finishReason,
+		Content:      choice.Message.Content,
+		FinishReason: domain.FinishReason(choice.FinishReason),
 		Usage: domain.Usage{
 			InputTokens:  dto.Usage.PromptTokens,
 			OutputTokens: dto.Usage.CompletionTokens,
@@ -75,5 +78,5 @@ func dtoResponseToDomain(dto ChatResponseDto) domain.ChatResponse {
 			CachedTokens: 0,
 		},
 		CreatedAt: time.Unix(dto.Created, 0).UTC(),
-	}
+	}, nil
 }
