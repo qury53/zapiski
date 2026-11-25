@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strings"
 
 	core_errors "github.com/qury53/GC_learn/sso/internal/core/errors"
 	"golang.org/x/crypto/bcrypt"
@@ -26,10 +25,10 @@ func NewEncryptor(config *Config) *Encryptor {
 // GeneratePasswordHash генерит хэш пароля
 //
 // Returns: хэш пароля
-func GeneratePasswordHash(val string) (string, error) {
-	hashedVal, err := bcrypt.GenerateFromPassword([]byte(val), 8)
+func (e *Encryptor) GeneratePasswordHash(val string) (string, error) {
+	hashedVal, err := bcrypt.GenerateFromPassword([]byte(val), 10)
 	if err != nil {
-		return "", fmt.Errorf("hash error")
+		return "", fmt.Errorf("hash error: %w", err)
 	}
 
 	return string(hashedVal), nil
@@ -38,7 +37,7 @@ func GeneratePasswordHash(val string) (string, error) {
 // CompareHashAndPassword сравнивает хэш с паролем
 //
 // Returns: ошибку wrong password если пароль не совпадает
-func CompareHashAndPassword(hash string, val string) error {
+func (e *Encryptor) CompareHashAndPassword(hash string, val string) error {
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(hash),
 		[]byte(val),
@@ -49,22 +48,18 @@ func CompareHashAndPassword(hash string, val string) error {
 	return nil
 }
 
-// GenerateVerificationCode генерирует криптографически безопасный N-значный цифровой код
-func GenerateVerificationCode(length int) (string, error) {
-	const digits = "0123456789"
-	var code strings.Builder
+// GenerateVerificationCode отвечает за генерацию 6-значного криптостойкого кода
+func (e *Encryptor) GenerateVerificationCode() (string, error) {
+	max := big.NewInt(900000)
 
-	for i := 0; i < length; i++ {
-		// Используем crypto/rand для максимальной безопасности (вместо math/rand)
-		maxIdx := big.NewInt(int64(len(digits)))
-		idx, err := rand.Int(rand.Reader, maxIdx)
-		if err != nil {
-			return "", err
-		}
-		code.WriteByte(digits[idx.Int64()])
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
 	}
 
-	return code.String(), nil
+	code := n.Int64() + 100000
+
+	return fmt.Sprintf("%d", code), nil
 }
 
 // HashToken хэширует токен алгоритов SHA256

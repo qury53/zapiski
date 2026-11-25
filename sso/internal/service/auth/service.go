@@ -2,9 +2,9 @@ package auth_service
 
 import (
 	"context"
-	"shared/pkg/logger"
 	"time"
 
+	"github.com/qury53/GC_learn/platform/logger"
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
 	core_oauth "github.com/qury53/GC_learn/sso/internal/core/oauth"
 	"github.com/redis/go-redis/v9"
@@ -21,7 +21,7 @@ type AuthService struct {
 	encryptor         Encryptor
 	smtp              Smtp
 	cacheClient       CacheClient
-	JWTSecret         []byte
+	jwtSecret         []byte
 	AccessTokenTTL    time.Duration
 	RefreshTokenTTL   time.Duration
 }
@@ -30,7 +30,7 @@ type Encryptor interface {
 	HashToken(token string) string
 	GeneratePasswordHash(val string) (string, error)
 	CompareHashAndPassword(hash string, val string) error
-	GenerateVerificationCode(length int) (string, error)
+	GenerateVerificationCode() (string, error)
 }
 
 type SessionRepository interface {
@@ -57,6 +57,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int64) (domain.User, error)
 	CreateOAuthUser(ctx context.Context, username string, email string) (domain.User, error)
 	ActivateUser(ctx context.Context, email string) error
+	DeletePendingUser(ctx context.Context, userID int64) error
 }
 
 type CacheClient interface {
@@ -105,7 +106,7 @@ func NewAuthService(
 		encryptor:         encryptor,
 		smtp:              smtp,
 		cacheClient:       cacheClient,
-		JWTSecret:         []byte(config.JWTSecret),
+		jwtSecret:         []byte(config.JWTSecret),
 		AccessTokenTTL:    config.AccessTokenTTL,
 		RefreshTokenTTL:   config.RefreshTokenTTL,
 	}

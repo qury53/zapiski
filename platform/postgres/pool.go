@@ -1,4 +1,4 @@
-package core_repository_postgres
+package pgx_pool
 
 import (
 	"context"
@@ -34,6 +34,10 @@ func NewPool(
 	pool, err := pgxpool.NewWithConfig(ctx, pgxConf)
 	if err != nil {
 		return nil, fmt.Errorf("create pgx pool: %w", err)
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("ping failed: %w", err)
 	}
 
 	return &Pool{

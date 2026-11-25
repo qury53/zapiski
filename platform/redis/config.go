@@ -1,4 +1,4 @@
-package core_repository_redis
+package redis
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 )
 
 type Config struct {
-	Addr       string        `envconfig:"ADDR"`
-	Password   string        `envconfig:"PASSWORD"`
-	User       string        `envconfig:"USER"`
-	DB         int           `envconfig:"DB"`
-	MaxRetries int           `envconfig:"MAX_RETRIES"`
-	CacheTTL   time.Duration `envconfig:"CACHE_TTL"`
+	Addr       string        `envconfig:"ADDR" required:"true"`
+	Password   string        `envconfig:"PASSWORD" required:"true"`
+	User       string        `envconfig:"USER" required:"true"`
+	DB         int           `envconfig:"DB" required:"true"`
+	MaxRetries int           `envconfig:"MAX_RETRIES" required:"true"`
+	CacheTTL   time.Duration `envconfig:"CACHE_TTL" required:"true"`
 }
 
 func NewConfig() (*Config, error) {

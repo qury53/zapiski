@@ -36,5 +36,5 @@ func (t *AuthTransport) Logout(
 		return nil, status.Error(core_transport_grpc_response.RespondCode(err), "logout failed")
 	}
 
-	return nil, nil
+	return &emptypb.Empty{}, nil
 }

@@ -6,14 +6,21 @@ import (
 	"log/slog"
 
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
-	core_encrypt "github.com/qury53/GC_learn/sso/internal/core/encrypt"
+)
+
+const (
+	codeLength = 6
 )
 
 func (s *AuthService) Register(
 	ctx context.Context,
 	user domain.User,
 ) (int64, domain.VerificationStatus, error) {
-	hash, err := core_encrypt.GeneratePasswordHash(user.Password)
+	// Email в БД хранится в нижнем регистре: на нём завязаны и UNIQUE(email),
+	// и точное сравнение в ActivateUser/GetUserByEmail, и OAuth-автопривязка.
+	user.Email = normalizeEmail(user.Email)
+
+	hash, err := s.encryptor.GeneratePasswordHash(user.Password)
 	if err != nil {
 		s.log.Debug("failed to generate password hash", slog.String("error", err.Error()))
 		return 0, domain.StatusUnknown, fmt.Errorf(
@@ -31,10 +38,24 @@ func (s *AuthService) Register(
 		)
 	}
 
-	s.log.Debug("creating verification code")
-	verificationCode, err := s.GenerateVerificationCode()
+	// Ошибка на любом следующем шаге оставит пользователя в pending_verification
+	// без кода, а повторный Register упадёт на UNIQUE(email): откатываем всё.
+	cleanup := func() {
+		cleanupCtx := context.WithoutCancel(ctx)
 
+		if dropErr := s.dropVerificationCode(cleanupCtx, user.Email); dropErr != nil {
+			s.log.Warn("failed to drop verification code", slog.String("error", dropErr.Error()))
+		}
+
+		if delErr := s.userRepository.DeletePendingUser(cleanupCtx, user.ID); delErr != nil {
+			s.log.Warn("failed to delete pending user", slog.String("error", delErr.Error()))
+		}
+	}
+
+	s.log.Debug("creating verification code")
+	verificationCode, err := s.encryptor.GenerateVerificationCode()
 	if err != nil {
+		cleanup()
 		return 0, domain.StatusUnknown, fmt.Errorf(
 			"generate verification code: %w",
 			err,
@@ -47,6 +68,7 @@ func (s *AuthService) Register(
 		verificationCode,
 	); err != nil {
 		s.log.Warn("failed to cache verification code", slog.String("error", err.Error()))
+		cleanup()
 		return 0, domain.StatusUnknown, fmt.Errorf("failed to cache verification code: %w", err)
 	}
 
@@ -55,12 +77,7 @@ func (s *AuthService) Register(
 		user.Email,
 		verificationCode,
 	); err != nil {
-		// Код не дошёл до пользователя — убираем его из кэша, иначе
-		// кулдаун заблокирует повторную отправку на 5 минут.
-		if dropErr := s.dropVerificationCode(ctx, user.Email); dropErr != nil {
-			s.log.Warn("failed to drop verification code", slog.String("error", dropErr.Error()))
-		}
-
+		cleanup()
 		return 0, domain.StatusUnknown, fmt.Errorf(
 			"send verification code: %w",
 			err,

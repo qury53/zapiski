@@ -5,10 +5,11 @@ import (
 )
 
 type SmtpRepository struct {
-	auth     smtp.Auth
-	host     string
-	addr     string
-	fromText string
+	auth        smtp.Auth
+	host        string
+	addr        string
+	fromText    string
+	implicitTLS bool
 }
 
 func NewSmtpRepository(config *Config) *SmtpRepository {
@@ -18,9 +19,10 @@ func NewSmtpRepository(config *Config) *SmtpRepository {
 	}
 
 	return &SmtpRepository{
-		auth:     auth,
-		host:     config.Host,
-		addr:     config.Host + ":" + config.Port,
-		fromText: config.SenderEmail,
+		auth:        smtp.PlainAuth("", config.Username, config.Password, config.Host),
+		host:        config.Host,
+		addr:        config.Host + ":" + config.Port,
+		fromText:    config.SenderEmail,
+		implicitTLS: config.Port == "465",
 	}
 }

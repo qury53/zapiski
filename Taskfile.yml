@@ -19,8 +19,13 @@ vars:
   POSTGRES_URL: "postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@zapiski-postgres:5432/{{.POSTGRES_DB}}?sslmode=disable"
 
 tasks:
-  docker-up-infra:
-    desc: "Поднимает инфраструктуру (postgres, redis, mailhog)"
+  docker-net-init:
+    desc: "Создает docker сеть zapiski-net"
+    cmds:
+      - docker network create zapiski-net
+
+  migrate-force-0:
+    desc: "Сбрасывает dirty-состояние миграций на версию 0"
     cmds:
       - docker compose up -d zapiski-postgres zapiski-redis mailhog
 
@@ -30,20 +35,14 @@ tasks:
       - docker compose up -d --build
 
   docker-up:
-<<<<<<< Updated upstream
-    desc: "Поднимает все докер контейнеры"
-=======
     desc: "Поднимает все докер контейнеры (включая observability)"
     deps:
       - docker-obs-up
->>>>>>> Stashed changes
     cmds:
       - docker compose up -d --build
 
   docker-down:
     desc: "Останавливает все докер контейнеры"
-<<<<<<< Updated upstream
-=======
     cmds:
       - docker compose down
 
@@ -51,7 +50,6 @@ tasks:
     desc: "Останавливает приложение и observability"
     deps:
       - docker-obs-down
->>>>>>> Stashed changes
     cmds:
       - docker compose down
 
@@ -110,10 +108,39 @@ tasks:
         -database={{.POSTGRES_URL}}
         force {{.v}}
 
-  migrate-force-0:
-    desc: "Сбрасывает dirty-состояние миграций на версию 0"
+  docker-build:
+    desc: "Собирает образы sso и agent"
+    cmds:
+      - docker compose build zapiski-sso zapiski-agent
+
+  docker-up-build:
+    desc: "Поднимает инфраструктуру и сервисы с пересборкой"
     deps:
-      - docker-up-infra
+      - docker-obs-up
+    cmds:
+      - docker compose up -d --build
+
+  docker-up:
+    desc: "Поднимает все докер контейнеры"
+    deps:
+      - docker-obs-up
+    cmds:
+      - docker compose up -d
+
+  docker-obs-up:
+    desc: "Поднимает сервисы сбора логов и метрик"
+    cmds:
+      - docker compose -f observability/docker-compose.obs.yml up -d
+
+  docker-obs-down:
+    desc: "Останавливает сервисы сбора логов и метрик"
+    cmds:
+      - docker compose -f observability/docker-compose.obs.yml down
+
+  docker-down:
+    desc: "Останавливает все докер контейнеры"
+    deps:
+      - docker-obs-down
     cmds:
       - docker compose run --rm zapiski-postgres-migrate
         -path=/migrations
@@ -146,8 +173,6 @@ tasks:
       - cleanup-binaries
     cmds:
       - go build -o {{.BIN_DIR}}/agent ./agent/cmd
-<<<<<<< Updated upstream
-=======
       - go build -o {{.BIN_DIR}}/sso ./sso/cmd
       - go build -o {{.BIN_DIR}}/api ./api/cmd
 
@@ -163,27 +188,27 @@ tasks:
 
   run-agent:
     desc: "Запуск сервиса агентов (agent)"
+      - go build -o {{.BIN_DIR}}/sso ./sso/cmd
+
+  run-agent:
+    desc: "Запуск сервиса агентов(agent)"
     deps:
       - build
     cmds:
       - ./{{.BIN_DIR}}/agent
 
   run-sso:
-    desc: "Запуск сервиса авторизации (sso)"
+    desc: "Запуск сервиса авторизации(sso)"
     deps:
       - build
     cmds:
       - ./{{.BIN_DIR}}/sso
->>>>>>> Stashed changes
 
   run-api:
     desc: "Запуск API gateway"
     deps:
       - build
     cmds:
-<<<<<<< Updated upstream
-      - ./{{.BIN_DIR}}/agent
-=======
       - ./{{.BIN_DIR}}/api
 
   run:
@@ -196,4 +221,4 @@ tasks:
         ./{{.BIN_DIR}}/sso &
         ./{{.BIN_DIR}}/agent &
         wait
->>>>>>> Stashed changes
+

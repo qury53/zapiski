@@ -19,14 +19,16 @@ const (
 	resLocked   int64 = -2
 )
 
-func (s *AuthService) VerifyEmailBeta(
+func (s *AuthService) VerifyEmail(
 	ctx context.Context,
 	email string,
 	code string,
 ) (domain.VerificationStatus, error) {
+	email = normalizeEmail(email)
+
 	res, err := verifyEmailScript.Run(ctx, s.cacheClient,
 		[]string{s.verificationCacheKey(email), s.verificationCodeAttemptsCacheKey(email)},
-		code,
+		s.encryptor.HashToken(code),
 		maxAttempts,
 		verificationCodeTTL.Milliseconds(),
 	).Int64()

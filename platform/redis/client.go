@@ -1,4 +1,4 @@
-package core_repository_redis
+package redis
 
 import (
 	"context"
@@ -38,4 +38,8 @@ func NewClient(ctx context.Context, config *Config) (*Client, error) {
 		Client:  client,
 		timeout: config.CacheTTL,
 	}, nil
+}
+
+func (c *Client) Close() error {
+	return c.Client.Close()
 }

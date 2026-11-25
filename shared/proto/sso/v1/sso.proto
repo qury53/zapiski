@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sso.v1;
 
-option go_package = "github.com/qury/yourapp/gen/sso/v1;ssov1";
+option go_package = "github.com/qury/zapiski/gen/sso/v1;ssov1";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/duration.proto";
@@ -36,6 +36,7 @@ message LoginRequest {
 
 message LoginResponse {
   string access_token = 1;
+  int64 user_id = 3;
 }
 
 message RefreshRequest {
@@ -62,7 +63,7 @@ message VerifyEmailResponse {
 
 message OAuthConnectRequest {
   OAuthProvider provider = 1;
-  string redirect_url = 2;
+  string redirect_uri = 2;
   string code_challenge = 3;
   CodeChallengeMethod code_challenge_method = 4;
 }

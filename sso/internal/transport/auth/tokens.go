@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"shared/pkg/logger"
 	"strings"
 
+	"github.com/qury53/GC_learn/platform/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )

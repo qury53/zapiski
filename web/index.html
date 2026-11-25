@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo">Панель</div>
+
+    <nav class="nav">
+      <div class="nav-item active" data-tab="chat">Чат</div>
+      <div class="nav-item" data-tab="homework">Домашнее задание</div>
+      <div class="nav-item" data-tab="quizzes">Квизы</div>
+      <div class="nav-item" data-tab="stats">Статистика</div>
+      <div class="nav-item" data-tab="leaderboard">Лидерборд</div>
+    </nav>
+
+    <div class="profile">Профиль</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h2 id="pageTitle">Чат</h2>
+    </div>
+
+    <section class="tab-content active" id="tab-chat">
+      <div class="panel">
+        <h3>Чат</h3>
+        <div class="placeholder">Область диалога</div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-homework">
+      <div class="panel">
+        <h3>Домашнее задание</h3>
+        <div class="placeholder">Список заданий</div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-quizzes">
+      <div class="panel">
+        <h3>Квизы</h3>
+        <div class="placeholder">Список квизов</div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-stats">
+      <div class="panel">
+        <h3>Статистика</h3>
+        <div class="placeholder">Графики и показатели</div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-leaderboard">
+      <div class="panel">
+        <h3>Лидерборд</h3>
+        <div class="placeholder">Таблица результатов</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

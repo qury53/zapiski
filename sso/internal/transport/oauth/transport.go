@@ -5,8 +5,7 @@ import (
 	"net/netip"
 	"time"
 
-	"shared/pkg/logger"
-
+	"github.com/qury53/GC_learn/platform/logger"
 	"github.com/qury53/GC_learn/sso/internal/core/domain"
 )
 

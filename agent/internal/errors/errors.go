@@ -9,4 +9,7 @@ var (
 	ErrUnprocessableEntity = errors.New("unprocessable entity")
 	ErrTooMantRequest      = errors.New("too many request")
 	ErrUndefinedError      = errors.New("error undefined")
+
+	InsufficientBalance    = errors.New("insufficient balance")
+	ErrInternalServerError = errors.New("internal server error")
 )
