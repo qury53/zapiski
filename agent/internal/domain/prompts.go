@@ -12,8 +12,11 @@ const (
 )
 
 type Message struct {
-	Role    Role
-	Content string
+	ID        int
+	ChatID    int
+	Role      Role
+	Content   string
+	CreatedAt time.Time
 }
 
 type ChatRequest struct {
