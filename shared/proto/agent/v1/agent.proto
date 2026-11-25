@@ -4,31 +4,71 @@ package agent.V1;
 import "google/protobuf/struct.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "github.com/qury/yourapp/gen/gigachat/agentv1;agentv1";
 
 service AgentService {
     rpc ChatCompletion(ChatRequest) returns (ChatResponse);
+    rpc GetChats(GetChatsRequest) returns (GetChatsResponse);
+    rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+}
+
+message GetMessagesRequest {
+  int64 chat_id = 1;
+  optional int64 limit = 2;
+  optional int64 offset = 3;
+}
+
+message GetMessagesResponse {
+  repeated Message message = 1;
+}
+
+message GetChatsRequest {
+  int64 user_id = 1;
+  optional int64 limit = 2;
+  optional int64 offset = 3;
+}
+
+message GetChatsResponse {
+  repeated Chat chats = 1;
+}
+
+enum ChatMode {
+  CHAT_MODE_UNSPECIFIED = 0;
+  CHAT_MODE_SUPPORT = 1;
+  CHAT_MODE_FULL = 2;
+}
+
+message Chat {
+  int64 id = 1;
+  int64 version = 2;
+  ChatMode mode = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  optional google.protobuf.Timestamp deleted_at = 6;
+  int64 user_id = 7;
 }
 
 
 // Запрос на генерацию ответа LLM.
 message ChatRequest {
   string model = 1;
-
   repeated Message messages = 2;
-
   // Максимальное количество генерируемых токенов.
   optional int32 max_tokens = 3;
-
   // Температура сэмплирования.
   optional double temperature = 4;
+  int64 chat_id = 5;
+  int64 user_id = 6;
 }
 
-// Сообщение диалога.
 message Message {
-  Role role = 1;
-  string content = 2;
+  int64 id = 1;
+  int64 chat_id = 2;
+  Role role = 3;
+  string content = 4;
+  google.protobuf.Timestamp created_at = 5;
 }
 
 enum Role {

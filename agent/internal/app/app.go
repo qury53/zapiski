@@ -53,7 +53,7 @@ func New(
 	//provider := ai_provider_gc.NewGCProvider(config)
 	provider := ai_provider_smartapi.NewSmartAPIProvider(providerConfig, log)
 	service := agent_service.NewAgentService(provider)
-	transport := agent_transport.NewAgentTransport(service)
+	transport := agent_transport.NewAgentTransport(service, log)
 
 	srvMetrics := grpcProm.NewServerMetrics(
 		grpcProm.WithServerHandlingTimeHistogram(),

@@ -20,10 +20,13 @@ type Message struct {
 }
 
 type ChatRequest struct {
+	ChatID      *int
+	ChatMode    ChatMode
 	Model       string
 	Messages    []Message
 	MaxTokens   *int
 	Temperature *float64
+	UserID      int
 }
 
 type ChatResponse struct {

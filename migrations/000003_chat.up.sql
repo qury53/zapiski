@@ -37,3 +37,6 @@ CREATE INDEX ON zapiski.chats (user_id, updated_at DESC)
     WHERE deleted_at IS NULL;
 
 CREATE INDEX ON zapiski.messages (chat_id, id);
+
+CREATE INDEX idx_messages_chat_created
+ON zapiski.messages (chat_id, created_at DESC);
