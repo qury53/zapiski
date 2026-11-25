@@ -15,6 +15,7 @@ func (t *AgentTransport) GetMessages(
 	messages, err := t.agentService.GetMessages(
 		ctx,
 		int(req.GetChatId()),
+		int(req.GetUserId()),
 		int64PtrToIntPtr(req.Limit),
 		int64PtrToIntPtr(req.Offset),
 	)

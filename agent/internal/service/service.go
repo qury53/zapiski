@@ -14,8 +14,16 @@ type AgentService struct {
 	chatRepository    *chat_postgres_repository.ChatRepository
 }
 
-func NewAgentService(provider ai_provider.AIProvider) *AgentService {
+func NewAgentService(
+	log *logger.Logger,
+	provider ai_provider.AIProvider,
+	chatRepository *chat_postgres_repository.ChatRepository,
+	messageRepository *message_postgres_repository.MessageRepository,
+) *AgentService {
 	return &AgentService{
-		aiProvider: provider,
+		log:               log,
+		aiProvider:        provider,
+		chatRepository:    chatRepository,
+		messageRepository: messageRepository,
 	}
 }

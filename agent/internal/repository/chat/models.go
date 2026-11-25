@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/qury53/GC_learn/agent/internal/domain"
-	core_errors "github.com/qury53/GC_learn/agent/internal/errors"
 )
 
 const chatColumns = `
@@ -15,7 +14,7 @@ const chatColumns = `
 	mode,
 	created_at,
 	updated_at,
-	deleted_at,
+	deleted_at
 `
 
 type ChatModel struct {
@@ -66,17 +65,18 @@ func mapModelModeToDomain(mode string) (domain.ChatMode, error) {
 	case "support":
 		return domain.ModeSupport, nil
 	default:
-		return domain.ModeUnknown, fmt.Errorf("unknown chat mode: %w", core_errors.ErrInvalidArgument)
+		// Неизвестный режим не должен ронять всю выдачу списка чатов.
+		return domain.ModeUnknown, nil
 	}
 }
 
 func mapDomainModeToModel(mode domain.ChatMode) (string, error) {
 	switch mode {
-	case domain.ModeFull:
-		return "full", nil
 	case domain.ModeSupport:
 		return "support", nil
+	case domain.ModeFull, domain.ModeUnknown:
+		return "full", nil
 	default:
-		return "", fmt.Errorf("unknown chat mode: %v", mode)
+		return "full", nil
 	}
 }

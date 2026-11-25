@@ -189,6 +189,7 @@ type GetMessagesRequest struct {
 	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
 	Limit         *int64                 `protobuf:"varint,2,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
 	Offset        *int64                 `protobuf:"varint,3,opt,name=offset,proto3,oneof" json:"offset,omitempty"`
+	UserId        int64                  `protobuf:"varint,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -240,6 +241,13 @@ func (x *GetMessagesRequest) GetLimit() int64 {
 func (x *GetMessagesRequest) GetOffset() int64 {
 	if x != nil && x.Offset != nil {
 		return *x.Offset
+	}
+	return 0
+}
+
+func (x *GetMessagesRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
 	}
 	return 0
 }
@@ -495,6 +503,7 @@ type ChatRequest struct {
 	Temperature   *float64 `protobuf:"fixed64,4,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
 	ChatId        int64    `protobuf:"varint,5,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
 	UserId        int64    `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Mode          ChatMode `protobuf:"varint,7,opt,name=mode,proto3,enum=agent.V1.ChatMode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -569,6 +578,13 @@ func (x *ChatRequest) GetUserId() int64 {
 		return x.UserId
 	}
 	return 0
+}
+
+func (x *ChatRequest) GetMode() ChatMode {
+	if x != nil {
+		return x.Mode
+	}
+	return ChatMode_CHAT_MODE_UNSPECIFIED
 }
 
 type Message struct {
@@ -805,11 +821,12 @@ var File_agent_v1_agent_proto protoreflect.FileDescriptor
 
 const file_agent_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14agent/v1/agent.proto\x12\bagent.V1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"z\n" +
+	"\x14agent/v1/agent.proto\x12\bagent.V1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x93\x01\n" +
 	"\x12GetMessagesRequest\x12\x17\n" +
 	"\achat_id\x18\x01 \x01(\x03R\x06chatId\x12\x19\n" +
 	"\x05limit\x18\x02 \x01(\x03H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
-	"\x06offset\x18\x03 \x01(\x03H\x01R\x06offset\x88\x01\x01B\b\n" +
+	"\x06offset\x18\x03 \x01(\x03H\x01R\x06offset\x88\x01\x01\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\x03R\x06userIdB\b\n" +
 	"\x06_limitB\t\n" +
 	"\a_offset\"B\n" +
 	"\x13GetMessagesResponse\x12+\n" +
@@ -833,7 +850,7 @@ const file_agent_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"deleted_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\tdeletedAt\x88\x01\x01\x12\x17\n" +
 	"\auser_id\x18\a \x01(\x03R\x06userIdB\r\n" +
-	"\v_deleted_at\"\xee\x01\n" +
+	"\v_deleted_at\"\x96\x02\n" +
 	"\vChatRequest\x12\x14\n" +
 	"\x05model\x18\x01 \x01(\tR\x05model\x12-\n" +
 	"\bmessages\x18\x02 \x03(\v2\x11.agent.V1.MessageR\bmessages\x12\"\n" +
@@ -841,7 +858,8 @@ const file_agent_v1_agent_proto_rawDesc = "" +
 	"max_tokens\x18\x03 \x01(\x05H\x00R\tmaxTokens\x88\x01\x01\x12%\n" +
 	"\vtemperature\x18\x04 \x01(\x01H\x01R\vtemperature\x88\x01\x01\x12\x17\n" +
 	"\achat_id\x18\x05 \x01(\x03R\x06chatId\x12\x17\n" +
-	"\auser_id\x18\x06 \x01(\x03R\x06userIdB\r\n" +
+	"\auser_id\x18\x06 \x01(\x03R\x06userId\x12&\n" +
+	"\x04mode\x18\a \x01(\x0e2\x12.agent.V1.ChatModeR\x04modeB\r\n" +
 	"\v_max_tokensB\x0e\n" +
 	"\f_temperature\"\xab\x01\n" +
 	"\aMessage\x12\x0e\n" +
@@ -924,22 +942,23 @@ var file_agent_v1_agent_proto_depIdxs = []int32{
 	12, // 4: agent.V1.Chat.updated_at:type_name -> google.protobuf.Timestamp
 	12, // 5: agent.V1.Chat.deleted_at:type_name -> google.protobuf.Timestamp
 	9,  // 6: agent.V1.ChatRequest.messages:type_name -> agent.V1.Message
-	1,  // 7: agent.V1.Message.role:type_name -> agent.V1.Role
-	12, // 8: agent.V1.Message.created_at:type_name -> google.protobuf.Timestamp
-	2,  // 9: agent.V1.ChatResponse.finish_reason:type_name -> agent.V1.FinishReason
-	11, // 10: agent.V1.ChatResponse.usage:type_name -> agent.V1.Usage
-	12, // 11: agent.V1.ChatResponse.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 12: agent.V1.AgentService.ChatCompletion:input_type -> agent.V1.ChatRequest
-	5,  // 13: agent.V1.AgentService.GetChats:input_type -> agent.V1.GetChatsRequest
-	3,  // 14: agent.V1.AgentService.GetMessages:input_type -> agent.V1.GetMessagesRequest
-	10, // 15: agent.V1.AgentService.ChatCompletion:output_type -> agent.V1.ChatResponse
-	6,  // 16: agent.V1.AgentService.GetChats:output_type -> agent.V1.GetChatsResponse
-	4,  // 17: agent.V1.AgentService.GetMessages:output_type -> agent.V1.GetMessagesResponse
-	15, // [15:18] is the sub-list for method output_type
-	12, // [12:15] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	0,  // 7: agent.V1.ChatRequest.mode:type_name -> agent.V1.ChatMode
+	1,  // 8: agent.V1.Message.role:type_name -> agent.V1.Role
+	12, // 9: agent.V1.Message.created_at:type_name -> google.protobuf.Timestamp
+	2,  // 10: agent.V1.ChatResponse.finish_reason:type_name -> agent.V1.FinishReason
+	11, // 11: agent.V1.ChatResponse.usage:type_name -> agent.V1.Usage
+	12, // 12: agent.V1.ChatResponse.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 13: agent.V1.AgentService.ChatCompletion:input_type -> agent.V1.ChatRequest
+	5,  // 14: agent.V1.AgentService.GetChats:input_type -> agent.V1.GetChatsRequest
+	3,  // 15: agent.V1.AgentService.GetMessages:input_type -> agent.V1.GetMessagesRequest
+	10, // 16: agent.V1.AgentService.ChatCompletion:output_type -> agent.V1.ChatResponse
+	6,  // 17: agent.V1.AgentService.GetChats:output_type -> agent.V1.GetChatsResponse
+	4,  // 18: agent.V1.AgentService.GetMessages:output_type -> agent.V1.GetMessagesResponse
+	16, // [16:19] is the sub-list for method output_type
+	13, // [13:16] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_agent_v1_agent_proto_init() }

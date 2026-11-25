@@ -18,6 +18,7 @@ message GetMessagesRequest {
   int64 chat_id = 1;
   optional int64 limit = 2;
   optional int64 offset = 3;
+  int64 user_id = 4;
 }
 
 message GetMessagesResponse {
@@ -61,6 +62,7 @@ message ChatRequest {
   optional double temperature = 4;
   int64 chat_id = 5;
   int64 user_id = 6;
+  ChatMode mode = 7;
 }
 
 message Message {

@@ -30,6 +30,7 @@ type AgentService interface {
 	GetMessages(
 		ctx context.Context,
 		chat_id int,
+		user_id int,
 		limit *int,
 		offset *int,
 	) ([]domain.Message, error)

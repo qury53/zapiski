@@ -13,12 +13,15 @@ import (
 	grpcProm "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	chat_postgres_repository "github.com/qury53/GC_learn/agent/internal/repository/chat"
+	message_postgres_repository "github.com/qury53/GC_learn/agent/internal/repository/message"
 	agent_service "github.com/qury53/GC_learn/agent/internal/service"
 	agent_transport "github.com/qury53/GC_learn/agent/internal/transport"
 	ai_provider_smartapi "github.com/qury53/GC_learn/agent/pkg/ai_provider/smartapi"
 	"github.com/qury53/GC_learn/platform/interceptor"
 	"github.com/qury53/GC_learn/platform/logger"
 	prometheus_metrics "github.com/qury53/GC_learn/platform/metrics"
+	pgx_pool "github.com/qury53/GC_learn/platform/postgres"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -52,7 +55,22 @@ func New(
 	//deprecated gc provider
 	//provider := ai_provider_gc.NewGCProvider(config)
 	provider := ai_provider_smartapi.NewSmartAPIProvider(providerConfig, log)
-	service := agent_service.NewAgentService(provider)
+
+	postgresConfig := pgx_pool.NewConfigMust()
+	pool, err := pgx_pool.NewPool(ctx, postgresConfig)
+	if err != nil {
+		log.Error("failed to initialize postgres pool", slog.Any("error", err))
+		app.Close()
+
+		return nil, fmt.Errorf("postgres pool initialization failed: %w", err)
+	}
+
+	app.closers = append(app.closers, pool.Close)
+
+	chatRepository := chat_postgres_repository.NewChatRepository(pool)
+	messageRepository := message_postgres_repository.NewMessageRepository(pool)
+
+	service := agent_service.NewAgentService(log, provider, chatRepository, messageRepository)
 	transport := agent_transport.NewAgentTransport(service, log)
 
 	srvMetrics := grpcProm.NewServerMetrics(

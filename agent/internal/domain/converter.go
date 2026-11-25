@@ -23,6 +23,13 @@ func RequestDtoToDomain(dto *agentV1.ChatRequest) ChatRequest {
 	result := ChatRequest{
 		Model:    dto.GetModel(),
 		Messages: messages,
+		UserID:   int(dto.GetUserId()),
+		ChatMode: ChatModeFromProto(dto.GetMode()),
+	}
+
+	if dto.GetChatId() > 0 {
+		chatID := int(dto.GetChatId())
+		result.ChatID = &chatID
 	}
 
 	if dto.MaxTokens != nil {
@@ -36,6 +43,19 @@ func RequestDtoToDomain(dto *agentV1.ChatRequest) ChatRequest {
 	}
 
 	return result
+}
+
+// ChatModeFromProto маппит protobuf enum в доменный режим чата.
+// UNSPECIFIED означает «как в БД по умолчанию» — full.
+func ChatModeFromProto(mode agentV1.ChatMode) ChatMode {
+	switch mode {
+	case agentV1.ChatMode_CHAT_MODE_SUPPORT:
+		return ModeSupport
+	case agentV1.ChatMode_CHAT_MODE_FULL:
+		return ModeFull
+	default:
+		return ModeFull
+	}
 }
 
 func RoleFromProto(role agentV1.Role) Role {

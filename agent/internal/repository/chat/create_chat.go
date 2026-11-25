@@ -19,7 +19,12 @@ func (r *ChatRepository) CreateChat(
 	VAlUES ($1, $2)
 	RETURNING ` + chatColumns
 
-	row := r.pool.QueryRow(ctx, query, chat.UserID, chat.Mode)
+	mode, err := mapDomainModeToModel(chat.Mode)
+	if err != nil {
+		return domain.Chat{}, err
+	}
+
+	row := r.pool.QueryRow(ctx, query, chat.UserID, mode)
 
 	var chatModel ChatModel
 

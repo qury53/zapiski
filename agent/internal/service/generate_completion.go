@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/qury53/GC_learn/agent/internal/domain"
+	core_errors "github.com/qury53/GC_learn/agent/internal/errors"
 )
 
 const (
@@ -17,6 +18,23 @@ func (s *AgentService) GenerateCompletion(
 	ctx context.Context,
 	request domain.ChatRequest,
 ) (domain.ChatResponse, error) {
+	if request.UserID <= 0 {
+		return domain.ChatResponse{}, fmt.Errorf(
+			"GenerateCompletion service: userID has to be positive: %w",
+			core_errors.ErrInvalidArgument,
+		)
+	}
+
+	// Роли system/assistant от клиента подменяют системный промпт и историю.
+	for _, m := range request.Messages {
+		if m.Role != domain.RoleUser {
+			return domain.ChatResponse{}, fmt.Errorf(
+				"GenerateCompletion service: only user messages are allowed: %w",
+				core_errors.ErrInvalidArgument,
+			)
+		}
+	}
+
 	var (
 		chat domain.Chat
 		err  error
@@ -42,6 +60,31 @@ func (s *AgentService) GenerateCompletion(
 		}
 
 		request.ChatID = &chat.ID
+	} else {
+		chat, err = s.chatRepository.GetChat(ctx, *request.ChatID)
+		if err != nil {
+			s.log.Info(
+				"failed to get chat",
+				slog.Int("chatID", *request.ChatID),
+				slog.Any("error", err),
+			)
+
+			return domain.ChatResponse{}, fmt.Errorf(
+				"GenerateCompletion service: failed to get chat: %w",
+				err,
+			)
+		}
+
+		// Чужой чат неотличим от отсутствующего.
+		if chat.UserID != request.UserID {
+			return domain.ChatResponse{}, fmt.Errorf(
+				"GenerateCompletion service: chat not found: %w",
+				core_errors.ErrNotFound,
+			)
+		}
+
+		// Режим берём из БД, а не из запроса клиента.
+		request.ChatMode = chat.Mode
 	}
 
 	msgContext, err := s.messageRepository.GetMessages(
@@ -50,7 +93,6 @@ func (s *AgentService) GenerateCompletion(
 		chatContextLimit,
 		0,
 	)
-
 	if err != nil {
 		s.log.Debug(
 			"failed to get chat context",
@@ -61,7 +103,11 @@ func (s *AgentService) GenerateCompletion(
 		return domain.ChatResponse{}, fmt.Errorf("generate completion: %w", err)
 	}
 
-	messages := make([]domain.Message, 0, len(msgContext)+2)
+	// Новые сообщения запоминаем до склейки с историей: в склейке к ним
+	// добавляется system-промпт, и индекс «сколько было контекста» уже не работает.
+	newMessages := request.Messages
+
+	messages := make([]domain.Message, 0, len(msgContext)+len(newMessages)+1)
 	switch request.ChatMode {
 	case domain.ModeSupport:
 		messages = append(messages, domain.Message{
@@ -71,7 +117,7 @@ func (s *AgentService) GenerateCompletion(
 	}
 
 	messages = append(messages, msgContext...)
-	messages = append(messages, request.Messages...)
+	messages = append(messages, newMessages...)
 
 	request.Messages = messages
 	resp, err := s.aiProvider.GenerateCompletion(ctx, request)
@@ -79,7 +125,7 @@ func (s *AgentService) GenerateCompletion(
 		return domain.ChatResponse{}, err
 	}
 
-	for _, m := range request.Messages[len(msgContext)+1:] { // только новые, без system и history
+	for _, m := range newMessages {
 		if m.Role == domain.RoleUser {
 			if _, err := s.messageRepository.Create(ctx, domain.Message{
 				ChatID:  *request.ChatID,

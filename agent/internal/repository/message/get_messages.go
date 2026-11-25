@@ -19,16 +19,18 @@ func (r *MessageRepository) GetMessages(
 			SELECT ` + messageColumns + `
 			FROM zapiski.messages
 			WHERE chat_id = $1
-			ORDER BY created_at DESC
+			ORDER BY created_at DESC, id DESC
 			LIMIT $2
 			OFFSET $3
 		) AS recent
-		ORDER BY created_at ASC
+		ORDER BY created_at ASC, id ASC
 	`
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := r.pool.Query(ctx, query, chatID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query error: %w", err)
 	}
+
+	defer rows.Close()
 
 	messages := make([]MessageModel, 0, limit)
 	for rows.Next() {
@@ -44,6 +46,10 @@ func (r *MessageRepository) GetMessages(
 		}
 
 		messages = append(messages, messageModel)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
 	}
 
 	return modelsToDomain(messages), nil
