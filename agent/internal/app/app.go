@@ -18,6 +18,7 @@ import (
 	agent_service "github.com/qury53/GC_learn/agent/internal/service"
 	agent_transport "github.com/qury53/GC_learn/agent/internal/transport"
 	ai_provider_smartapi "github.com/qury53/GC_learn/agent/pkg/ai_provider/smartapi"
+	"github.com/qury53/GC_learn/platform/auth"
 	"github.com/qury53/GC_learn/platform/interceptor"
 	"github.com/qury53/GC_learn/platform/logger"
 	prometheus_metrics "github.com/qury53/GC_learn/platform/metrics"
@@ -33,11 +34,11 @@ const (
 type App struct {
 	grpcServer   *grpc.Server
 	log          *logger.Logger
-	shutdownTime time.Duration
-	port         string
-	closers      []func()
 	metricsReg   *prometheus.Registry
 	metricsSrv   *http.Server
+	port         string
+	closers      []func()
+	shutdownTime time.Duration
 }
 
 func New(
@@ -52,8 +53,8 @@ func New(
 	}
 
 	providerConfig := ai_provider_smartapi.NewConfigMust()
-	//deprecated gc provider
-	//provider := ai_provider_gc.NewGCProvider(config)
+	// deprecated gc provider
+	// provider := ai_provider_gc.NewGCProvider(config)
 	provider := ai_provider_smartapi.NewSmartAPIProvider(providerConfig, log)
 
 	postgresConfig := pgx_pool.NewConfigMust()
@@ -95,10 +96,15 @@ func New(
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
+	authConfig := auth.NewConfigMust()
+	authValidator := auth.NewValidator(authConfig.Secret, authConfig.Issuer)
+	authPolicy := auth.NewPolicy()
+
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptor.TimeoutUnaryInterceptor(30*time.Second),
 			interceptor.RecoveryInterceptor(log),
+			auth.UnaryServerInterceptor(authValidator, authPolicy),
 			srvMetrics.UnaryServerInterceptor(),
 			interceptor.LoggingUnaryInterceptor(log, serviceName),
 		),
@@ -106,7 +112,9 @@ func New(
 
 	v1.RegisterAgentServiceServer(s, transport)
 	srvMetrics.InitializeMetrics(s)
-	reflection.Register(s)
+	if config.Env == "dev" {
+		reflection.Register(s)
+	}
 
 	app.grpcServer = s
 

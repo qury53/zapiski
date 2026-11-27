@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	//лимит контекстного окна, чем больше, тем пизже ответы в долгосроке, но дороже по токенам
+	// лимит контекстного окна, чем больше, тем пизже ответы в долгосроке, но дороже по токенам
 	chatContextLimit = 20
 )
 
@@ -108,8 +108,8 @@ func (s *AgentService) GenerateCompletion(
 	newMessages := request.Messages
 
 	messages := make([]domain.Message, 0, len(msgContext)+len(newMessages)+1)
-	switch request.ChatMode {
-	case domain.ModeSupport:
+
+	if request.ChatMode == domain.ModeSupport {
 		messages = append(messages, domain.Message{
 			Role:    domain.RoleSystem,
 			Content: supportSystemPrompt,

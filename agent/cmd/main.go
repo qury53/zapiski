@@ -22,7 +22,7 @@ func main() {
 		log.Fatal("failed to load env", err)
 	}
 
-	//config := ai_provider_gc.NewConfigMust()
+	// config := ai_provider_gc.NewConfigMust()
 	loggerConfig := logger.NewConfigMust()
 	logger := logger.New(loggerConfig, "agent")
 

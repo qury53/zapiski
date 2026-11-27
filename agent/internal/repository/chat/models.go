@@ -18,12 +18,12 @@ const chatColumns = `
 `
 
 type ChatModel struct {
-	ID        int        `db:"id"`
-	Version   int        `db:"version"`
-	Mode      string     `db:"mode"`
 	CreatedAt time.Time  `db:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at"`
 	DeletedAt *time.Time `db:"deleted_at"`
+	Mode      string     `db:"mode"`
+	ID        int        `db:"id"`
+	Version   int        `db:"version"`
 	UserID    int        `db:"user_id"`
 }
 
