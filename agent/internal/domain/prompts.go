@@ -12,30 +12,30 @@ const (
 )
 
 type Message struct {
-	ID        int
-	ChatID    int
+	CreatedAt time.Time
 	Role      Role
 	Content   string
-	CreatedAt time.Time
+	ID        int
+	ChatID    int
 }
 
 type ChatRequest struct {
 	ChatID      *int
-	ChatMode    ChatMode
-	Model       string
-	Messages    []Message
 	MaxTokens   *int
 	Temperature *float64
+	Model       string
+	Messages    []Message
+	ChatMode    ChatMode
 	UserID      int
 }
 
 type ChatResponse struct {
+	CreatedAt    time.Time
 	ThreadID     string
 	Model        string
 	Content      string
 	FinishReason FinishReason
 	Usage        Usage
-	CreatedAt    time.Time
 }
 
 type FinishReason string

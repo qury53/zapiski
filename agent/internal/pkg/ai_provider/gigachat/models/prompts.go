@@ -7,17 +7,17 @@ import "encoding/json"
 // ============================================================================
 
 type ChatCompletionRequest struct {
-	Model         string         `json:"model"`
 	ThreadID      *string        `json:"thread_id,omitempty"`
 	CreatedAt     *int64         `json:"created_at,omitempty"`
-	Messages      []Message      `json:"messages"`
 	ModelOptions  *ModelOptions  `json:"model_options,omitempty"`
-	Stream        bool           `json:"stream,omitempty"`
-	DisableFilter bool           `json:"disable_filter,omitempty"`
 	RankerOptions *RankerOptions `json:"ranker_options,omitempty"`
 	UserInfo      *UserInfo      `json:"user_info,omitempty"`
 	ToolConfig    *ToolConfig    `json:"tool_config,omitempty"`
+	Model         string         `json:"model"`
+	Messages      []Message      `json:"messages"`
 	Tools         []Tool         `json:"tools,omitempty"`
+	Stream        bool           `json:"stream,omitempty"`
+	DisableFilter bool           `json:"disable_filter,omitempty"`
 }
 
 type ModelOptions struct {
@@ -26,10 +26,10 @@ type ModelOptions struct {
 	MaxTokens           *int32          `json:"max_tokens,omitempty"`
 	RepetitionPenalty   *float64        `json:"repetition_penalty,omitempty"`
 	UpdateInterval      *int32          `json:"update_interval,omitempty"`
-	UnnormalizedHistory bool            `json:"unnormalized_history,omitempty"`
 	TopLogprobs         *int32          `json:"top_logprobs,omitempty"`
 	ResponseFormat      *ResponseFormat `json:"response_format,omitempty"`
 	ParallelToolCalls   *bool           `json:"parallel_tool_calls,omitempty"`
+	UnnormalizedHistory bool            `json:"unnormalized_history,omitempty"`
 }
 
 type ResponseFormat struct {
@@ -39,9 +39,9 @@ type ResponseFormat struct {
 }
 
 type RankerOptions struct {
-	Enabled         bool    `json:"enabled"`
 	TopN            *int32  `json:"top_n,omitempty"`
 	EmbeddingsModel *string `json:"embeddings_model,omitempty"`
+	Enabled         bool    `json:"enabled"`
 }
 
 type UserInfo struct {
@@ -49,9 +49,9 @@ type UserInfo struct {
 }
 
 type ToolConfig struct {
-	Mode         string  `json:"mode"`
 	ToolName     *string `json:"tool_name,omitempty"`
 	FunctionName *string `json:"function_name,omitempty"`
+	Mode         string  `json:"mode"`
 }
 
 type Tool struct {
@@ -130,9 +130,9 @@ type FunctionResult struct {
 }
 
 type ToolExecution struct {
+	SecondsLeft *int32              `json:"seconds_left,omitempty"`
 	Name        string              `json:"name"`
 	Status      ToolExecutionStatus `json:"status"`
-	SecondsLeft *int32              `json:"seconds_left,omitempty"`
 	Censored    bool                `json:"censored,omitempty"`
 }
 
@@ -172,9 +172,9 @@ type Source struct {
 type ChatCompletionResponse struct {
 	Model        string       `json:"model"`
 	ThreadID     string       `json:"thread_id"`
-	CreatedAt    int64        `json:"created_at"`
-	Messages     []Message    `json:"messages"`
 	FinishReason FinishReason `json:"finish_reason"`
+	Messages     []Message    `json:"messages"`
+	CreatedAt    int64        `json:"created_at"`
 	Usage        Usage        `json:"usage"`
 }
 

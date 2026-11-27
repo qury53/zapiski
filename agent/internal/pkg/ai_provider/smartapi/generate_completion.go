@@ -42,7 +42,7 @@ func (p *SmartAPIProvider) GenerateCompletion(
 	)
 	if err != nil {
 		return domain.ChatResponse{}, fmt.Errorf(
-			"requred initialization failed: %w",
+			"required initialization failed: %w",
 			err,
 		)
 	}

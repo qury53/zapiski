@@ -17,11 +17,11 @@ const (
 )
 
 type MessageModel struct {
-	ID        int
-	ChatID    int
+	CreatedAt time.Time
 	Role      string
 	Content   string
-	CreatedAt time.Time
+	ID        int
+	ChatID    int
 }
 
 func modelToDomain(model MessageModel) domain.Message {

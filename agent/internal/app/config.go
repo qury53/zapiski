@@ -9,8 +9,9 @@ import (
 
 type Config struct {
 	GRPC_port    string        `envconfig:"GRPC_PORT" required:"true"`
-	ShutdownTime time.Duration `envconfig:"SHUTDOWN_TIME" default:"30s"`
 	MetricsPort  string        `envconfig:"METRICS_PORT" default:"9092"`
+	Env          string        `envconfig:"ENV" default:"dev"`
+	ShutdownTime time.Duration `envconfig:"SHUTDOWN_TIME" default:"30s"`
 }
 
 func NewConfig() (*Config, error) {

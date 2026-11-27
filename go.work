@@ -6,4 +6,5 @@ use (
     ./shared
     ./sso
 	./api
+    ./user
 )
