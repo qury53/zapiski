@@ -11,12 +11,12 @@ const (
 )
 
 type Chat struct {
-	ID        int
-	Version   int
-	Mode      ChatMode
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time
+	ID        int
+	Version   int
+	Mode      ChatMode
 	UserID    int
 }
 

@@ -8,11 +8,11 @@ import (
 )
 
 type ChatRequestDto struct {
+	MaxTokens   *int         `json:"max_tokens,omitempty"`
+	Temperature *float64     `json:"temperature,omitempty"`
 	Dto         string       `json:"model"`
 	Messages    []MessageDto `json:"messages"`
 	Stream      bool         `json:"stream"`
-	MaxTokens   *int         `json:"max_tokens,omitempty"`
-	Temperature *float64     `json:"temperature,omitempty"`
 }
 
 type MessageDto struct {
@@ -23,16 +23,16 @@ type MessageDto struct {
 type ChatResponseDto struct {
 	ID      string   `json:"id"`
 	Object  string   `json:"object"`
-	Created int64    `json:"created"`
 	Model   string   `json:"model"`
 	Choices []Choice `json:"choices"`
 	Usage   Usage    `json:"usage"`
+	Created int64    `json:"created"`
 }
 
 type Choice struct {
-	Index        int        `json:"index"`
 	Message      MessageDto `json:"message"`
 	FinishReason string     `json:"finish_reason"`
+	Index        int        `json:"index"`
 }
 
 type Usage struct {

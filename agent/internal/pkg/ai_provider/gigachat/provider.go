@@ -10,12 +10,12 @@ import (
 
 // GCProvier - провайдер GigaChat API
 type GCProvider struct {
+	expiresAt   time.Time
 	client      *http.Client
 	apiKey      string
-	mu          sync.RWMutex
 	accessToken string
-	expiresAt   time.Time
 	scope       string
+	mu          sync.RWMutex
 }
 
 func NewGCProvider(config *Config) *GCProvider {

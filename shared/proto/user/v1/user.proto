@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/qury/zapiski/gen/user/v1;userv1";
+
+import "google/protobuf/timestamp.proto";
+
+service User {
+    rpc GetUserByID(GetUserByIDRequest) returns (GetUserByIDResponse);
+    rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+}
+
+message GetUserByIDRequest {
+    int64 user_id = 1;
+}
+
+message GetUserByIDResponse {
+    UserProfile user = 1;
+}
+
+message GetUsersRequest {
+    optional int64 limit = 1;
+    optional int64 offset = 2;
+}
+
+message GetUsersResponse {
+    repeated UserProfile users = 1;
+}
+
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED          = 0;
+  VERIFICATION_STATUS_ACTIVE               = 1;
+  VERIFICATION_STATUS_PENDING_VERIFICATION = 2;
+  VERIFICATION_STATUS_BLOCKED              = 3;
+}
+
+message UserProfile {
+    int64                                  id         = 1;
+    string                                 username   = 2;
+    string                                 email      = 3;
+    VerificationStatus                     state      = 4;
+    google.protobuf.Timestamp              created_at = 5;
+}

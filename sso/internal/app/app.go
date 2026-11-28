@@ -139,7 +139,10 @@ func New(
 
 	ssov1.RegisterAuthServiceServer(grpcServer, authTransport)
 	srvMetrics.InitializeMetrics(grpcServer)
-	reflection.Register(grpcServer)
+	if config.Env == "dev" {
+		reflection.Register(grpcServer)
+	}
+
 	app.grpcServer = grpcServer
 
 	return app, nil
@@ -196,7 +199,7 @@ func (a *App) Run(ctx context.Context) error {
 		closed := make(chan struct{})
 
 		go func() {
-			_ = a.metricsServer.Shutdown(ctx)
+			_ = a.metricsServer.Shutdown(shutdownCtx)
 			a.grpcServer.GracefulStop()
 			close(closed)
 		}()

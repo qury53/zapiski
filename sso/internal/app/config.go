@@ -11,6 +11,7 @@ type Config struct {
 	GRPCPort     string        `envconfig:"GRPC_PORT" required:"true"`
 	MetricsPort  string        `envconfig:"METRICS_PORT" default:"9092"`
 	ShutdownTime time.Duration `envconfig:"SHUTDOWN_TIME" default:"30s"`
+	Env          string        `envconfig:"ENV" default:"dev"`
 }
 
 func NewConfig() (*Config, error) {
