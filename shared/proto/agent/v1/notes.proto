@@ -1,2 +1,137 @@
 syntax = "proto3";
 
+package agent.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "shared/pkg/proto/agent/v1;agentv1";
+
+// NoteService 
+//
+// Идентичность берётся из access-токена (auth.UserIDFrom на транспорте),
+// поэтому user_id в запросах не передаётся.
+service NoteService {
+  // Создать конспект вручную.
+  rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
+
+  // Сохранить сообщение ассистента как конспект.
+  rpc SaveNoteFromMessage(SaveNoteFromMessageRequest) returns (SaveNoteFromMessageResponse);
+
+  // Получить конспект по id.
+  rpc GetNote(GetNoteRequest) returns (GetNoteResponse);
+
+  // Список конспектов пользователя
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse);
+
+  // Обновить конспект.
+  // version — версия, которую прочитал клиент. При расхождении
+  // возвращается ABORTED, клиент должен перечитать конспект.
+  rpc UpdateNote(UpdateNoteRequest) returns (UpdateNoteResponse);
+
+  // Мягко удалить конспект.
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
+}
+
+// Источник конспекта.
+enum NoteSource {
+  NOTE_SOURCE_UNSPECIFIED = 0;
+
+  // Создан пользователем вручную.
+  NOTE_SOURCE_MANUAL = 1;
+
+  // Сохранён из сообщения ассистента.
+  NOTE_SOURCE_MESSAGE = 2;
+}
+
+message Note {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+  NoteSource source = 4;
+
+  // Чат, к которому относится конспект. Может быть пустым.
+  optional int64 chat_id = 5;
+
+  // Сообщение-источник. Заполнено только для NOTE_SOURCE_MESSAGE.
+  optional int64 source_message_id = 6;
+
+  // Счётчик для оптимистичной блокировки.
+  int64 version = 7;
+
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message CreateNoteRequest {
+  string title = 1;
+  string content = 2;
+
+  // Необязательная привязка к чату.
+  optional int64 chat_id = 3;
+}
+
+message CreateNoteResponse {
+  Note note = 1;
+}
+
+message SaveNoteFromMessageRequest {
+  int64 message_id = 1;
+
+  // Если не задан — заголовок собирается из текста сообщения.
+  optional string title = 2;
+}
+
+message SaveNoteFromMessageResponse {
+  Note note = 1;
+}
+
+message GetNoteRequest {
+  int64 id = 1;
+}
+
+message GetNoteResponse {
+  Note note = 1;
+}
+
+message ListNotesRequest {
+  optional int64 limit = 1;
+  optional int64 offset = 2;
+
+  // UNSPECIFIED — без фильтра по источнику.
+  NoteSource source = 3;
+
+  // Необязательный фильтр по чату.
+  optional int64 chat_id = 4;
+}
+
+message ListNotesResponse {
+  repeated Note notes = 1;
+
+  // Общее количество конспектов, подходящих под фильтр.
+  int64 total = 2;
+}
+
+message UpdateNoteRequest {
+  int64 id = 1;
+
+  // Версия, которую клиент прочитал. 0 — недопустимое значение.
+  int64 version = 2;
+
+  // Незаданные поля не изменяются.
+  optional string title = 3;
+  optional string content = 4;
+}
+
+message UpdateNoteResponse {
+  Note note = 1;
+}
+
+message DeleteNoteRequest {
+  int64 id = 1;
+
+  // Необязательно: если задано, удаление выполнится только
+  // при совпадении версии.
+  optional int64 version = 2;
+}
+
+message DeleteNoteResponse {}

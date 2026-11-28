@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	core_errors "github.com/qury53/GC_learn/agent/internal/errors"
+	core_errors "github.com/qury53/GC_learn/agent/internal/core/errors"
 )
 
 func (r *ChatRepository) DeleteChat(

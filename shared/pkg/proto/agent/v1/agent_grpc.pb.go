@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: agent/v1/agent.proto
 
-package v1
+package agentv1
 
 import (
 	context "context"
@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AgentService_ChatCompletion_FullMethodName = "/agent.V1.AgentService/ChatCompletion"
-	AgentService_GetChats_FullMethodName       = "/agent.V1.AgentService/GetChats"
-	AgentService_GetMessages_FullMethodName    = "/agent.V1.AgentService/GetMessages"
+	AgentService_ChatCompletion_FullMethodName = "/agent.v1.AgentService/ChatCompletion"
+	AgentService_GetChats_FullMethodName       = "/agent.v1.AgentService/GetChats"
+	AgentService_GetMessages_FullMethodName    = "/agent.v1.AgentService/GetMessages"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -174,7 +174,7 @@ func _AgentService_GetMessages_Handler(srv interface{}, ctx context.Context, dec
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AgentService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "agent.V1.AgentService",
+	ServiceName: "agent.v1.AgentService",
 	HandlerType: (*AgentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

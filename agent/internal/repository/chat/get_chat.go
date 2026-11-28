@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/qury53/GC_learn/agent/internal/domain"
-	core_errors "github.com/qury53/GC_learn/agent/internal/errors"
+	"github.com/qury53/GC_learn/agent/internal/core/domain"
+	core_errors "github.com/qury53/GC_learn/agent/internal/core/errors"
 )
 
 // GetChat возвращает чат по id. Используется для проверки владельца перед

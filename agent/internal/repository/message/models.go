@@ -3,7 +3,7 @@ package message_postgres_repository
 import (
 	"time"
 
-	"github.com/qury53/GC_learn/agent/internal/domain"
+	"github.com/qury53/GC_learn/agent/internal/core/domain"
 )
 
 const (
