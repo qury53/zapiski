@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package agent.V1;
+package agent.v1;
 import "google/protobuf/struct.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/qury/yourapp/gen/gigachat/agentv1;agentv1";
+option go_package = "shared/pkg/proto/agent/v1;agentv1";
 
 service AgentService {
     rpc ChatCompletion(ChatRequest) returns (ChatResponse);
